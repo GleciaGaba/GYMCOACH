@@ -1,10 +1,9 @@
-// 3) SecurityConfig - configuration globale de Spring Security
-// src/main/java/com/gymcoach/backend_gym/security/SecurityConfig.java
 package com.gymcoach.backend_gym.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -20,6 +19,7 @@ import java.util.Arrays;
 
 @Configuration
 public class SecurityConfig {
+
     private final UserDetailsServiceImpl userDetailsService;
     private final JwtFilter jwtFilter;
 
@@ -31,35 +31,32 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        // Configure AuthenticationManager
+        // 1) Configure AuthenticationManager
         AuthenticationManagerBuilder authBuilder =
             http.getSharedObject(AuthenticationManagerBuilder.class);
-        authBuilder.userDetailsService(userDetailsService)
-                   .passwordEncoder(passwordEncoder());
+        authBuilder
+            .userDetailsService(userDetailsService)
+            .passwordEncoder(passwordEncoder());
         AuthenticationManager authManager = authBuilder.build();
 
         http
-          // Enable CORS
-          .cors()
-            .and()
-          // Disable CSRF for stateless API
-          .csrf().disable()
-          // Stateless session management
-          .sessionManagement()
-            .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-          .and()
-          // Use our AuthenticationManager
+          // 2) Active CORS
+          .cors(Customizer.withDefaults())
+          // 3) Désactive CSRF
+          .csrf(csrf -> csrf.disable())
+          // 4) Session stateless
+          .sessionManagement(s -> s
+              .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+          // 5) Utilise notre AuthenticationManager
           .authenticationManager(authManager)
-          // Define RBAC and public endpoints
-          .authorizeHttpRequests()
-            .requestMatchers("/api/auth/**").permitAll()      // signup/login
-            .requestMatchers("/api/workouts/**").hasAnyRole("COACH", "ADMIN")   // coaches & admins
-            .requestMatchers("/api/clients/**").hasAnyRole("COACH", "ADMIN")    // coaches & admins
-            .requestMatchers("/api/profile/**").hasAnyRole("COACH","SPORTIF","ADMIN") // all roles
-            .requestMatchers("/api/admin/**").hasRole("ADMIN")                  // admin-only
-            .anyRequest().authenticated()
-          .and()
-          // Add JWT filter
+          // 6) Définition des droits d’accès avec inclusion du rôle ADMIN
+          .authorizeHttpRequests(authz -> authz
+              .requestMatchers("/api/auth/signup/coach").permitAll()
+              .requestMatchers("/api/auth/signup/sportif").hasAnyRole("COACH","ADMIN")
+              .requestMatchers("/api/auth/login").permitAll()
+              .anyRequest().authenticated()
+          )
+          // 7) Ajoute le filtre JWT
           .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
