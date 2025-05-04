@@ -2,6 +2,7 @@ package com.gymcoach.backend_gym.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -15,7 +16,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 public class SecurityConfig {
@@ -23,59 +24,53 @@ public class SecurityConfig {
     private final UserDetailsServiceImpl userDetailsService;
     private final JwtFilter jwtFilter;
 
-    public SecurityConfig(UserDetailsServiceImpl userDetailsService,
-                          JwtFilter jwtFilter) {
-        this.userDetailsService = userDetailsService;
-        this.jwtFilter = jwtFilter;
+    public SecurityConfig(UserDetailsServiceImpl uds, JwtFilter jf) {
+        this.userDetailsService = uds;
+        this.jwtFilter = jf;
     }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        // 1) Configure AuthenticationManager
-        AuthenticationManagerBuilder authBuilder =
-            http.getSharedObject(AuthenticationManagerBuilder.class);
-        authBuilder
-            .userDetailsService(userDetailsService)
-            .passwordEncoder(passwordEncoder());
-        AuthenticationManager authManager = authBuilder.build();
+        // 1) authmanager + password encoder
+        AuthenticationManagerBuilder authManagerBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
+        authManagerBuilder.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
+        AuthenticationManager authManager = authManagerBuilder.build();
 
         http
-          // 2) Active CORS
+          // 2) CORS / CSRF / session stateless
           .cors(Customizer.withDefaults())
-          // 3) Désactive CSRF
           .csrf(csrf -> csrf.disable())
-          // 4) Session stateless
-          .sessionManagement(s -> s
-              .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-          // 5) Utilise notre AuthenticationManager
+          .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
           .authenticationManager(authManager)
-          // 6) Définition des droits d’accès avec inclusion du rôle ADMIN
+
+          // 3) on ouvre tout sous /api/auth/**
           .authorizeHttpRequests(authz -> authz
-              .requestMatchers("/api/auth/signup/coach").permitAll()
-              .requestMatchers("/api/auth/signup/sportif").hasAnyRole("COACH","ADMIN")
-              .requestMatchers("/api/auth/login").permitAll()
+              .requestMatchers("/api/auth/**").permitAll()
+              // si vous voulez bloquer signupSportif au HTTP layer :
+              .requestMatchers(HttpMethod.POST, "/api/auth/signup/sportif").hasAuthority("COACH")
               .anyRequest().authenticated()
           )
-          // 7) Ajoute le filtre JWT
+
+          // 4) on ajoute le filtre JWT
           .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
-        config.setAllowedMethods(Arrays.asList("GET","POST","PUT","DELETE","OPTIONS"));
-        config.setAllowedHeaders(Arrays.asList("*"));
-        config.setAllowCredentials(true);
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
-        return source;
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration cfg = new CorsConfiguration();
+        cfg.setAllowedOrigins(List.of("http://localhost:5173"));
+        cfg.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
+        cfg.setAllowedHeaders(List.of("*"));
+        cfg.setAllowCredentials(true);
+        UrlBasedCorsConfigurationSource src = new UrlBasedCorsConfigurationSource();
+        src.registerCorsConfiguration("/**", cfg);
+        return src;
     }
 }

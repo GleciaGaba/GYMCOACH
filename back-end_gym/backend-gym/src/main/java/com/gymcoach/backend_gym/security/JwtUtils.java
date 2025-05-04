@@ -1,38 +1,42 @@
-/*
- * Sécurité Spring & JWT - Gym Coach App
- * Fichiers de configuration pour démarrer la sécurité pas à pas
- * Package : com.gymcoach.backend_gym.security
- */
-
-// 1) JwtUtils - utilitaire pour générer et valider les tokens JWT
-// src/main/java/com/gymcoach/backend_gym/security/JwtUtils.java
 package com.gymcoach.backend_gym.security;
 
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.io.Decoders;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import java.security.Key;
 import java.util.Date;
 
 @Component
 public class JwtUtils {
+
     @Value("${jwt.secret}")
-    private String jwtSecret;
+    private String jwtSecretBase64;           // votre Base64
 
     @Value("${jwt.expirationMs}")
     private int jwtExpirationMs;
+
+    private Key getSigningKey() {
+        byte[] keyBytes = Decoders.BASE64.decode(jwtSecretBase64);
+        return Keys.hmacShaKeyFor(keyBytes);
+    }
 
     public String generateToken(String username) {
         return Jwts.builder()
             .setSubject(username)
             .setIssuedAt(new Date())
             .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
-            .signWith(SignatureAlgorithm.HS256, jwtSecret)
+            .signWith(getSigningKey(), SignatureAlgorithm.HS256)
             .compact();
     }
 
     public String getEmailFromToken(String token) {
-        return Jwts.parser()
-            .setSigningKey(jwtSecret)
+        return Jwts.parserBuilder()
+            .setSigningKey(getSigningKey())
+            .build()
             .parseClaimsJws(token)
             .getBody()
             .getSubject();
@@ -40,11 +44,13 @@ public class JwtUtils {
 
     public boolean validateToken(String token) {
         try {
-            Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(token);
+            Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token);
             return true;
-        } catch (JwtException e) {
+        } catch (Exception e) {
             return false;
         }
     }
 }
-

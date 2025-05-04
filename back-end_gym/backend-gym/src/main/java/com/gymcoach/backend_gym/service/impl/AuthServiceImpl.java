@@ -7,8 +7,10 @@ import com.gymcoach.backend_gym.repository.UserRepository;
 import com.gymcoach.backend_gym.security.JwtUtils;
 import com.gymcoach.backend_gym.service.AuthService;
 import com.gymcoach.backend_gym.service.MailService;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -30,15 +32,22 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponse signupCoach(AuthRequest req) {
+        // 409 si email déjà présent
         if (userRepo.findByEmail(req.getEmail()).isPresent()) {
-            throw new RuntimeException("Email déjà utilisé");
+            throw new ResponseStatusException(
+              HttpStatus.CONFLICT,
+              "Email déjà utilisé"
+            );
         }
         User coach = User.builder()
             .email(req.getEmail())
             .password(encoder.encode(req.getPassword()))
             .role("COACH")
+            .firstName(req.getFirstName())
+            .lastName(req.getLastName())
             .build();
         userRepo.save(coach);
+
         String token = jwtUtils.generateToken(coach.getEmail());
         return new AuthResponse(token, coach.getEmail());
     }
@@ -46,12 +55,24 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthResponse signupSportif(AuthRequest req, String coachEmail) {
         User coach = userRepo.findByEmail(coachEmail)
-            .orElseThrow(() -> new RuntimeException("Coach introuvable"));
+            .orElseThrow(() -> new ResponseStatusException(
+              HttpStatus.NOT_FOUND,
+              "Coach introuvable"
+            ));
+
+        // 403 si pas un coach
         if (!"COACH".equals(coach.getRole())) {
-            throw new RuntimeException("Seuls les coachs peuvent créer un sportif");
+            throw new ResponseStatusException(
+              HttpStatus.FORBIDDEN,
+              "Seuls les coachs peuvent créer un sportif"
+            );
         }
+        // 409 si email déjà présent
         if (userRepo.findByEmail(req.getEmail()).isPresent()) {
-            throw new RuntimeException("Email déjà utilisé");
+            throw new ResponseStatusException(
+              HttpStatus.CONFLICT,
+              "Email déjà utilisé"
+            );
         }
         User sportif = User.builder()
             .email(req.getEmail())
@@ -59,8 +80,10 @@ public class AuthServiceImpl implements AuthService {
             .role("SPORTIF")
             .build();
         userRepo.save(sportif);
-        // Envoie des identifiants par email
+
+        // envoi des identifiants
         mailService.sendCredentials(req.getEmail(), req.getPassword());
+
         String token = jwtUtils.generateToken(sportif.getEmail());
         return new AuthResponse(token, sportif.getEmail());
     }
@@ -68,9 +91,16 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthResponse login(AuthRequest req) {
         User user = userRepo.findByEmail(req.getEmail())
-            .orElseThrow(() -> new RuntimeException("Identifiants invalides"));
+            .orElseThrow(() -> new ResponseStatusException(
+              HttpStatus.UNAUTHORIZED,
+              "Identifiants invalides"
+            ));
+
         if (!encoder.matches(req.getPassword(), user.getPassword())) {
-            throw new RuntimeException("Identifiants invalides");
+            throw new ResponseStatusException(
+              HttpStatus.UNAUTHORIZED,
+              "Identifiants invalides"
+            );
         }
         String token = jwtUtils.generateToken(user.getEmail());
         return new AuthResponse(token, user.getEmail());
