@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 // On récupère l'élément HTML <div id="root"></div> présent dans public/index.html
 // et on lui associe un "root" React via l'API createRoot de React 18.
