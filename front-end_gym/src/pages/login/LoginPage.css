@@ -1,0 +1,54 @@
+/* LoginPage.css */
+
+/* conteneur full-screen avec background */
+.login-hero {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  background: url('/images/hero.png') center/cover no-repeat;
+}
+
+/* overlay sombre */
+.login-hero .overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+/* centrer le form-card */
+.login-hero .form-container {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+}
+
+/* style de la carte */
+.login-card {
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 0.5rem;
+  max-width: 400px;
+  width: 100%;
+  padding: 2rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+/* titre centré */
+.login-card h2 {
+  margin-bottom: 1.5rem;
+  font-size: 1.75rem;
+  text-align: center;
+}
+
+/* labels un peu plus gras */
+.login-card .form-group label {
+  font-weight: 500;
+}
+
+/* bouton plein largeur */
+.login-card .btn-submit {
+  width: 100%;
+}

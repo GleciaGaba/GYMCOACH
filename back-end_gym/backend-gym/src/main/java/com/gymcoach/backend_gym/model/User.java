@@ -47,4 +47,12 @@ public class User {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+     /** Token unique envoyé par e-mail, it permet de lier un lien de confirmation à un utilisateur. */
+    @Column(name = "verification_token", unique = true)
+    private String verificationToken;
+
+    /** Facultatif : expiration du token, évite les confirmations trop anciennes. */
+    @Column(name = "token_expiry")
+    private LocalDateTime tokenExpiry;
 }

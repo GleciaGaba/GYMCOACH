@@ -1,11 +1,10 @@
 package com.gymcoach.backend_gym.security;
 
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
-import io.jsonwebtoken.io.Decoders;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.security.Key;
 import java.util.Date;
@@ -13,44 +12,54 @@ import java.util.Date;
 @Component
 public class JwtUtils {
 
+    // Clé secrète (16+ bytes) à mettre dans application.properties ou .yml
     @Value("${jwt.secret}")
-    private String jwtSecretBase64;           // votre Base64
+    private String jwtSecret;
 
+    // Durée de validité en ms (ex : 24h = 24 * 60 * 60 * 1000)
     @Value("${jwt.expirationMs}")
-    private int jwtExpirationMs;
+    private long jwtExpirationMs;
 
     private Key getSigningKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(jwtSecretBase64);
-        return Keys.hmacShaKeyFor(keyBytes);
+        // on utilise HS256
+        return Keys.hmacShaKeyFor(jwtSecret.getBytes());
     }
 
+    /** Génère un JWT pour l’utilisateur donné **/
     public String generateToken(String username) {
+        Date now = new Date();
         return Jwts.builder()
             .setSubject(username)
-            .setIssuedAt(new Date())
-            .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
+            .setIssuedAt(now)
+            .setExpiration(new Date(now.getTime() + jwtExpirationMs))
             .signWith(getSigningKey(), SignatureAlgorithm.HS256)
             .compact();
     }
 
-    public String getEmailFromToken(String token) {
+    /** Récupère le username depuis le token **/
+    public String getUsernameFromToken(String token) {
+        return parseClaims(token).getSubject();
+    }
+
+    /** Valide la signature et l’expiration du token **/
+    public boolean validateToken(String token, UserDetails userDetails) {
+        try {
+            Claims claims = parseClaims(token);
+            String username = claims.getSubject();
+            return username.equals(userDetails.getUsername())
+                   && claims.getExpiration().after(new Date());
+        } catch (JwtException | IllegalArgumentException e) {
+            // signature invalide, token mal formé, expiré, etc.
+            return false;
+        }
+    }
+
+    /** Parse et renvoie les Claims contenus dans le token **/
+    private Claims parseClaims(String token) {
         return Jwts.parserBuilder()
             .setSigningKey(getSigningKey())
             .build()
             .parseClaimsJws(token)
-            .getBody()
-            .getSubject();
-    }
-
-    public boolean validateToken(String token) {
-        try {
-            Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .build()
-                .parseClaimsJws(token);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+            .getBody();
     }
 }
