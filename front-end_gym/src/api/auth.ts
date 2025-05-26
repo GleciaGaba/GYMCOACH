@@ -14,6 +14,30 @@ API.interceptors.request.use(config => {
   return config;
 });
 
+// Intercepteur de réponses Axios pour gérer les erreurs 
+// d'authentification et les tokens expirés
+API.interceptors.response.use(
+  
+  // Si la réponse est OK, on la renvoie telle quelle
+  response => response,
+  
+  // En cas d'erreur, on examine le status et le message pour détecter 
+  // un token expiré ou un accès non autorisé
+  error => {
+    const status = error.response?.status;
+    const message = error.response?.data?.message || '';
+
+    // Si on reçoit un 401 ou un message d'expiration
+    if (status === 401 || message.toLowerCase().includes('expired')) {
+      localStorage.removeItem('token');
+      // Optionnel : forcer la redirection vers la page de login
+      window.location.href = '/login';
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 export const signupCoach = (data: {
   email: string;
   password: string;

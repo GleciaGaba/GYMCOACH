@@ -11,6 +11,7 @@ interface User {
   id: number;
   email: string;
   token: string;
+  role: 'COACH' | 'SPORTIF' | 'ADMIN'
 }
 interface AuthContextType {
   user: User | null;
