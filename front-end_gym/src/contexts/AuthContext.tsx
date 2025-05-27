@@ -1,3 +1,5 @@
+// src/contexts/AuthContext.tsx
+
 import {
   createContext,
   useContext,
@@ -5,18 +7,23 @@ import {
   ReactNode,
   useEffect,
 } from "react";
-import { loginAPI, signupAPI } from "../api/auth";
+import { login as loginAPI, signupCoach as signupAPI } from "../api/auth";
 
 interface User {
   id: number;
   email: string;
   token: string;
-  role: 'COACH' | 'SPORTIF' | 'ADMIN'
+  role: "COACH" | "SPORTIF" | "ADMIN";
 }
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string) => Promise<void>;
+  signup: (
+    firstName: string,
+    lastName: string,
+    email: string,
+    password: string
+  ) => Promise<void>;
   logout: () => void;
 }
 
@@ -31,13 +38,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function login(email: string, password: string) {
-    const u = await loginAPI(email, password);
+    const res = await loginAPI({ email, password });
+    const u: User = res.data;
     setUser(u);
     localStorage.setItem("user", JSON.stringify(u));
   }
 
-  async function signup(email: string, password: string) {
-    const u = await signupAPI(email, password);
+  async function signup(
+    firstName: string,
+    lastName: string,
+    email: string,
+    password: string
+  ) {
+    // on passe un objet, pas 4 args séparés
+    const res = await signupAPI({ firstName, lastName, email, password });
+    const u: User = res.data;
     setUser(u);
     localStorage.setItem("user", JSON.stringify(u));
   }

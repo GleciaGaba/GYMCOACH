@@ -44,10 +44,14 @@ export const signupCoach = (data: {
   firstName: string;
   lastName: string;
 }) => API.post('/api/auth/signup/coach', data);
+
+
 export const signupSportif = (data: { email: string; password: string }, coachEmail: string) =>
   API.post('/api/auth/signup/sportif', data, {
     headers: { 'X-Coach-Email': coachEmail } // si tu veux passer coachEmail en header
   });
+
+  
 export const login = (data: { email: string; password: string }) =>
   API.post('/api/auth/login', data);
 

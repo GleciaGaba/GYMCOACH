@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "../pages/Login";
 import Signup from "../pages/signup/SignupPage";
 import Dashboard from "../pages/Dashboard";
@@ -9,7 +9,7 @@ export default function AppRouter() {
   const { user } = useAuth();
 
   return (
-    <BrowserRouter>
+    
       <Routes>
         <Route
           path="/coach"
@@ -17,7 +17,7 @@ export default function AppRouter() {
         />
         <Route
           path="/signup"
-          element={user ? <Navigate to="/dashboard" /> : <Signup />}
+          element={user ? <Navigate to="/signup" /> : <Signup />}
         />
         <Route path="/resend-confirmation" 
         element={<ResendConfirmation />} 
@@ -27,10 +27,10 @@ export default function AppRouter() {
           element={user ? <Dashboard /> : <Navigate to="/login" />}
         />
         <Route
-          path="*"
+          path="/"
           element={<Navigate to={user ? "/dashboard" : "/login"} />}
         />
       </Routes>
-    </BrowserRouter>
+    
   );
 }
