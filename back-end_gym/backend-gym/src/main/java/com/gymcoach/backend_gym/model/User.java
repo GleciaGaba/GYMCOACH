@@ -55,4 +55,7 @@ public class User {
     /** Facultatif : expiration du token, évite les confirmations trop anciennes. */
     @Column(name = "token_expiry")
     private LocalDateTime tokenExpiry;
+
+    @Column(name = "password_changed")
+    private Boolean passwordChanged = false;
 }

@@ -64,8 +64,8 @@ public class AuthServiceImpl implements AuthService {
         String confirmUrl = "http://localhost:8080/api/auth/confirm?token=" + rawToken;
         mailService.sendVerificationEmail(coach.getEmail(), confirmUrl);
 
-        // Pas de JWT à l’inscription
-        return new AuthResponse(null, coach.getEmail(), "Un e-mail de confirmation vous a été envoyé.");
+        // Pas de JWT à l'inscription
+        return new AuthResponse(null, coach.getEmail(), "Un e-mail de confirmation vous a été envoyé.", coach.getRole());
     }
 
    /*  @Override
@@ -107,7 +107,7 @@ public class AuthServiceImpl implements AuthService {
 
 
 /**
- * Valide le compte d’un utilisateur via son token de vérification.
+ * Valide le compte d'un utilisateur via son token de vérification.
  *
  * @param token le token de confirmation reçu par e-mail
  * @throws ResponseStatusException si le token est invalide, déjà utilisé ou expiré
@@ -144,24 +144,24 @@ public void confirmEmail(String token) {
 /**
  * Renvoyer un nouvel e-mail de confirmation à un utilisateur non activé.
  *
- * @param email l’adresse e-mail de l’utilisateur à qui renvoyer le lien de confirmation
- * @throws ResponseStatusException si l’utilisateur n’existe pas (404) ou si le compte est déjà activé (400)
+ * @param email l'adresse e-mail de l'utilisateur à qui renvoyer le lien de confirmation
+ * @throws ResponseStatusException si l'utilisateur n'existe pas (404) ou si le compte est déjà activé (400)
  */
 @Override
 public void resendConfirmationEmail(String email) {
-  // 1. Rechercher l’utilisateur par son e-mail
+  // 1. Rechercher l'utilisateur par son e-mail
     User user = userRepo.findByEmail(email)
         .orElseThrow(() -> new ResponseStatusException(
             HttpStatus.NOT_FOUND, "Utilisateur introuvable"
         ));
-// 2. Vérifier que le compte n’est pas déjà activé
+// 2. Vérifier que le compte n'est pas déjà activé
     if (Boolean.TRUE.equals(user.getIsActive())) {
         throw new ResponseStatusException(
             HttpStatus.BAD_REQUEST, "Compte déjà activé"
         );
     }
-// 3. Générer un nouveau jeton de vérification et définir sa date d’expiration
-// Générer un nouveau token + date d’expiration à J+1
+// 3. Générer un nouveau jeton de vérification et définir sa date d'expiration
+// Générer un nouveau token + date d'expiration à J+1
     String newToken = UUID.randomUUID().toString();
     LocalDateTime expiry = LocalDateTime.now().plusHours(24);
     user.setVerificationToken(newToken);
@@ -169,10 +169,10 @@ public void resendConfirmationEmail(String email) {
     userRepo.save(user);
 
     // 4. Sauvegarder les modifications en base
-    // Construire l’URL complète de confirmation
+    // Construire l'URL complète de confirmation
     String confirmUrl = "http://ton-frontend/confirm?token=" + newToken;
 
-    // 6. Envoyer l’e-mail via le service dédié
+    // 6. Envoyer l'e-mail via le service dédié
     mailService.sendVerificationEmail(user.getEmail(), confirmUrl);
 }
 
@@ -198,7 +198,10 @@ public void resendConfirmationEmail(String email) {
               "Identifiants invalides"
             );
         }
+
         String token = jwtUtils.generateToken(user.getEmail());
-        return new AuthResponse(token, user.getEmail(), null);
+        // Si passwordChanged est null, on le considère comme false
+        String message = Boolean.FALSE.equals(user.getPasswordChanged()) ? "Vous devez changer votre mot de passe" : null;
+        return new AuthResponse(token, user.getEmail(), message, user.getRole());
     }
 }

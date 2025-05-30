@@ -8,7 +8,6 @@ import com.gymcoach.backend_gym.security.JwtUtils;
 import com.gymcoach.backend_gym.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -51,12 +50,12 @@ public class AuthController {
     public RedirectView confirmEmail(@RequestParam("token") String token) {
         try {
         authService.confirmEmail(token);
-        // si tout s’est bien passé → page de login
+        // si tout s'est bien passé → page de login
         return new RedirectView("http://localhost:5173/coach");
 
     } catch (ResponseStatusException ex) {
-        // pour tous les cas d’erreur (token invalide, expiré, compte déjà activé…)
-        // on redirige vers une page générique “bad request”
+        // pour tous les cas d'erreur (token invalide, expiré, compte déjà activé…)
+        // on redirige vers une page générique "bad request"
         return new RedirectView("http://localhost:5173/resend-confirmation");
     }
     }

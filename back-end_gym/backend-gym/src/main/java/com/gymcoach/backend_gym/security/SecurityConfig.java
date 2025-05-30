@@ -46,8 +46,8 @@ public class SecurityConfig {
           // 3) on ouvre tout sous /api/auth/**
           .authorizeHttpRequests(authz -> authz
               .requestMatchers("/api/auth/**").permitAll()
-              // si vous voulez bloquer signupSportif au HTTP layer :
-              .requestMatchers(HttpMethod.POST, "/api/auth/signup/sportif").hasAuthority("COACH")
+              .requestMatchers("/api/users/register-sportif").hasRole("COACH")
+              .requestMatchers("/api/users/change-password").authenticated()
               .anyRequest().authenticated()
           )
 
