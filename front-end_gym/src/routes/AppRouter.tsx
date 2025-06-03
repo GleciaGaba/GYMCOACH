@@ -3,7 +3,7 @@ import HomePage from "../pages/home/HomePage";
 import SignupPage from "../pages/signup/SignupPage";
 import LoginPage from "../pages/login/LoginPage";
 import DashboardCoach from "../pages/dashboard/DashboardCoach";
-//import DashboardSportif from "../pages/dashboard/DashboardSportif";
+import DashboardSportif from "../pages/dashboard/DashboardSportif";
 //import DashboardAdmin from "../pages/dashboard/DashboardAdmin";
 import AddSportifPage from "../pages/sportif/AddSportifPage";
 import { useAuth } from "../contexts/AuthContext";
@@ -38,7 +38,7 @@ export default function AppRouter() {
           user?.role === "COACH" ? <AddSportifPage /> : <Navigate to="/login" />
         }
       />
-      {/*<Route
+      <Route
         path="/dashboard_sportif"
         element={
           user?.role === "SPORTIF" ? (
@@ -48,14 +48,23 @@ export default function AppRouter() {
           )
         }
       />
-      <Route
+      {/*<Route
         path="/dashboard_admin"
         element={
           user?.role === "ADMIN" ? <DashboardAdmin /> : <Navigate to="/login" />
         }
       />*/}
       <Route path="/resend-confirmation" element={<ResendConfirmation />} />
-      <Route path="*" element={<Navigate to="/" />} />
+      <Route
+        path="/*"
+        element={
+          user ? (
+            <Navigate to={`/dashboard_${user.role.toLowerCase()}`} />
+          ) : (
+            <Navigate to="/" />
+          )
+        }
+      />
     </Routes>
   );
 }

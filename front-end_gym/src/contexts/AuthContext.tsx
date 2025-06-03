@@ -15,6 +15,8 @@ interface User {
   email: string;
   token: string;
   role: "COACH" | "SPORTIF" | "ADMIN";
+  firstName: string;
+  lastName: string;
 }
 
 interface AuthContextType {
@@ -37,14 +39,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const stored = localStorage.getItem("user");
-    if (stored) setUser(JSON.parse(stored));
+    if (stored) {
+      setUser(JSON.parse(stored));
+    }
   }, []);
 
   async function login(email: string, password: string): Promise<string> {
     try {
       // Login pour obtenir le token et les informations utilisateur
       const loginRes = await loginAPI({ email, password });
-      const { token, role, email: userEmail, password_changed } = loginRes.data;
+      const {
+        token,
+        role,
+        email: userEmail,
+        password_changed,
+        firstName,
+        lastName,
+      } = loginRes.data;
 
       if (!role || !["COACH", "SPORTIF", "ADMIN"].includes(role)) {
         throw new Error("Rôle utilisateur invalide");
@@ -55,6 +66,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: userEmail,
         token: token,
         role: role,
+        firstName: firstName,
+        lastName: lastName,
       };
 
       console.log("Utilisateur connecté avec le rôle:", user.role);
@@ -80,33 +93,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     email: string,
     password: string
   ) {
-    const res = await signupAPI({ firstName, lastName, email, password });
-    const userData = res.data;
+    try {
+      const res = await signupAPI({ firstName, lastName, email, password });
+      console.log("Réponse inscription:", res.data);
 
-    if (
-      !userData.role ||
-      !["COACH", "SPORTIF", "ADMIN"].includes(userData.role)
-    ) {
-      throw new Error("Rôle utilisateur invalide");
+      // Redirection vers la page de login après inscription réussie
+      navigate("/login");
+    } catch (error: any) {
+      console.error("Erreur lors de l'inscription:", error);
+      throw error;
     }
-
-    const user: User = {
-      id: userData.id || 0,
-      email: userData.email,
-      token: userData.token,
-      role: userData.role,
-    };
-
-    console.log("Utilisateur inscrit avec le rôle:", user.role);
-    setUser(user);
-    localStorage.setItem("user", JSON.stringify(user));
-    localStorage.setItem("token", userData.token);
   }
 
   function logout() {
     setUser(null);
+    // Effacer toutes les informations du localStorage
     localStorage.removeItem("user");
     localStorage.removeItem("token");
+    localStorage.removeItem("userRole");
+    // Rediriger vers la page de login
+    navigate("/login");
   }
 
   return (

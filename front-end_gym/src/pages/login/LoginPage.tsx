@@ -1,9 +1,10 @@
 // src/pages/login/LoginPage.tsx
-import React, { useState, FormEvent } from "react";
+import React, { useState, FormEvent, useEffect } from "react";
 import { Container, Form, Button, Card, Alert } from "react-bootstrap";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import ChangePasswordModal from "../../components/change-password/ChangePasswordModal";
+import { confirmCoachAccount } from "../../api/auth";
 import "./LoginPage.css"; // on réutilise le même CSS que pour SignupPage
 
 interface LoginForm {
@@ -18,6 +19,28 @@ const LoginPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const confirmAccount = async () => {
+      const token = searchParams.get("token");
+      if (token) {
+        try {
+          await confirmCoachAccount(token);
+          setError(
+            "Compte confirmé avec succès ! Vous pouvez maintenant vous connecter."
+          );
+        } catch (error: any) {
+          setError(
+            error.response?.data?.message ||
+              "Erreur lors de la confirmation du compte"
+          );
+        }
+      }
+    };
+
+    confirmAccount();
+  }, [searchParams]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -36,8 +59,7 @@ const LoginPage: React.FC = () => {
         setShowChangePassword(true);
         return;
       }
-
-      navigate(`/dashboard_${userData.role.toLowerCase()}`);
+      // La redirection sera gérée automatiquement par le routeur
     } catch (err: any) {
       setError(err.response?.data?.message || "Erreur lors de la connexion");
     } finally {
@@ -62,7 +84,11 @@ const LoginPage: React.FC = () => {
             <p className="text-muted">Connectez-vous à votre compte</p>
           </Card.Header>
           <Card.Body>
-            {error && <Alert variant="danger">{error}</Alert>}
+            {error && (
+              <Alert variant={error.includes("succès") ? "success" : "danger"}>
+                {error}
+              </Alert>
+            )}
             <Form onSubmit={handleSubmit}>
               <Form.Group className="mb-4">
                 <Form.Label>Email</Form.Label>

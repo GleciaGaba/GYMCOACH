@@ -7,7 +7,7 @@ export default function Header() {
   const { user, logout } = useAuth();
 
   return (
-    <Navbar bg="dark" variant="dark" expand="lg">
+    <Navbar bg="dark" variant="dark" expand="lg" className="glass-navbar">
       <Container>
         <Navbar.Brand as={Link} to="/">
           Gym Coach App

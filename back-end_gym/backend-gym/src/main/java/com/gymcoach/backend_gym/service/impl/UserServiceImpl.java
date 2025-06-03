@@ -38,6 +38,10 @@ public class UserServiceImpl implements UserService {
                 "Coach introuvable"
             ));
 
+        System.out.println("Coach trouvé: " + coach.getEmail());
+        System.out.println("Rôle du coach: " + coach.getRole());
+        System.out.println("Comparaison avec 'COACH': " + "COACH".equals(coach.getRole()));
+
         if (!"COACH".equals(coach.getRole())) {
             throw new ResponseStatusException(
                 HttpStatus.FORBIDDEN,

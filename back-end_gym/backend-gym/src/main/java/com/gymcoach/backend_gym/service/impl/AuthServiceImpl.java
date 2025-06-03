@@ -61,7 +61,7 @@ public class AuthServiceImpl implements AuthService {
             .build();
         userRepo.save(coach);
 
-        String confirmUrl = "http://localhost:8080/api/auth/confirm?token=" + rawToken;
+        String confirmUrl = "http://localhost:5173/login?token=" + rawToken;
         mailService.sendVerificationEmail(coach.getEmail(), confirmUrl);
 
         // Pas de JWT à l'inscription
@@ -133,8 +133,9 @@ public void confirmEmail(String token) {
         );
     }
   
-// 3) Activation du compte et nettoyage des champs liés à la vérification
+// 4) Activation du compte et mise à jour des champs
   user.setIsActive(true);
+  user.setCreatedAt(LocalDateTime.now());
   user.setVerificationToken(null);
   user.setTokenExpiry(null);
   userRepo.save(user);
@@ -170,7 +171,7 @@ public void resendConfirmationEmail(String email) {
 
     // 4. Sauvegarder les modifications en base
     // Construire l'URL complète de confirmation
-    String confirmUrl = "http://ton-frontend/confirm?token=" + newToken;
+    String confirmUrl = "http://localhost:5173/login?token=" + newToken;
 
     // 6. Envoyer l'e-mail via le service dédié
     mailService.sendVerificationEmail(user.getEmail(), confirmUrl);
@@ -200,8 +201,13 @@ public void resendConfirmationEmail(String email) {
         }
 
         String token = jwtUtils.generateToken(user.getEmail());
-        // Si passwordChanged est null, on le considère comme false
-        String message = Boolean.FALSE.equals(user.getPasswordChanged()) ? "Vous devez changer votre mot de passe" : null;
-        return new AuthResponse(token, user.getEmail(), message, user.getRole());
+        return new AuthResponse(
+            token,
+            user.getEmail(),
+            "Connexion réussie",
+            user.getRole(),
+            user.getFirstName(),
+            user.getLastName()
+        );
     }
 }

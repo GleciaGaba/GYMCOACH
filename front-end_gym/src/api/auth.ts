@@ -12,39 +12,44 @@ const API = axios.create({
 
 // Intercepteur pour injecter le token s'il existe
 API.interceptors.request.use((config) => {
+  // Ne pas ajouter le token pour les routes d'inscription et de login
+  if (
+    config.url?.includes("/api/auth/signup") ||
+    config.url?.includes("/api/auth/login")
+  ) {
+    return config;
+  }
+
   const token = localStorage.getItem("token");
-  console.log("Intercepteur request - Token présent:", !!token);
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
-    console.log("Headers configurés:", config.headers);
+    console.log("Token ajouté aux headers:", {
+      url: config.url,
+      token: token.substring(0, 10) + "...",
+      headers: config.headers,
+    });
+  } else {
+    console.log("Pas de token trouvé pour la requête:", config.url);
   }
   return config;
 });
 
 // Intercepteur de réponses Axios pour gérer les erreurs
-// d'authentification et les tokens expirés
 API.interceptors.response.use(
-  // Si la réponse est OK, on la renvoie telle quelle
   (response) => response,
-
-  // En cas d'erreur, on examine le status et le message pour détecter
-  // un token expiré ou un accès non autorisé
   (error) => {
     const status = error.response?.status;
     const message = error.response?.data?.message || "";
     console.log("Erreur API:", {
       status,
       message,
-      headers: error.config?.headers,
       url: error.config?.url,
     });
 
-    // On ne déconnecte que pour les erreurs 401 (non authentifié) ou token expiré
     if (status === 401 || message.toLowerCase().includes("expired")) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       localStorage.removeItem("userRole");
-      // Optionnel : forcer la redirection vers la page de login
       window.location.href = "/login";
     }
 
@@ -52,35 +57,31 @@ API.interceptors.response.use(
   }
 );
 
+// Inscription d'un coach
 export const signupCoach = (data: {
   email: string;
   password: string;
   firstName: string;
   lastName: string;
-}) => API.post("/api/auth/signup/coach", data);
+}) => {
+  console.log("Inscription coach:", { ...data, password: "***" });
+  return API.post("/api/auth/signup/coach", {
+    email: data.email,
+    password: data.password,
+    firstName: data.firstName,
+    lastName: data.lastName,
+    role: "COACH",
+  });
+};
 
-export const signupSportif = (
-  data: {
-    email: string;
-    password: string;
-    firstName: string;
-    lastName: string;
-    temporaryPassword: string;
-  },
-  coachEmail: string
-) =>
-  API.post(
-    "/api/auth/signup/sportif",
-    {
-      ...data,
-      temporaryPassword: data.password, // Le mot de passe temporaire est le même que le mot de passe initial
-    },
-    {
-      headers: { "X-Coach-Email": coachEmail },
-    }
-  );
+// Confirmation du compte coach
+export const confirmCoachAccount = (token: string) => {
+  return API.post("/api/auth/confirm-account", { token });
+};
 
-export const login = (data: { email: string; password: string }) =>
-  API.post("/api/auth/login", data);
+// Connexion
+export const login = (data: { email: string; password: string }) => {
+  return API.post("/api/auth/login", data);
+};
 
 export default API;

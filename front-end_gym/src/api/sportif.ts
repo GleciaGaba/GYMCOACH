@@ -13,9 +13,6 @@ export interface SportifData {
 
 // Le coach crée un compte sportif avec un mot de passe temporaire
 export const addSportif = async (data: SportifData) => {
-  const token = localStorage.getItem("token");
-  console.log("Token présent:", !!token);
-
   // Restructuration des données pour correspondre à l'API
   const requestData = {
     firstName: data.first_name,
@@ -25,14 +22,7 @@ export const addSportif = async (data: SportifData) => {
     temporaryPassword: data.password, // Le mot de passe temporaire est le même que le mot de passe initial
   };
 
-  console.log("Données envoyées:", requestData);
-
-  return API.post("/api/users/register-sportif", requestData, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-  });
+  return API.post("/api/users/register-sportif", requestData);
 };
 
 // Le sportif confirme son compte avec le token reçu par email

@@ -42,22 +42,33 @@ const SignupPage: React.FC = () => {
 
   // Gère la soumission du formulaire
   const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault(); // Empêche le rechargement de la page
+    e.preventDefault();
     setError(null);
 
-    if (form.password !== form.confirmPassword) {
-      setError("Les mots de passe ne correspondent pas");
+    // Validation email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(form.email)) {
+      setError(
+        "Veuillez entrer une adresse email valide (ex: nom@domaine.com)"
+      );
       return;
     }
 
+    // Validation mot de passe
     if (form.password.length < 12) {
       setError("Le mot de passe doit contenir au moins 12 caractères");
       return;
     }
 
+    // Validation confirmation mot de passe
+    if (form.password !== form.confirmPassword) {
+      setError("Les mots de passe ne correspondent pas");
+      return;
+    }
+
     try {
       setLoading(true);
-      await signup(form.email, form.password, form.first_name, form.last_name);
+      await signup(form.first_name, form.last_name, form.email, form.password);
       navigate("/login");
     } catch (err: any) {
       setError(err.response?.data?.message || "Erreur lors de l'inscription");
@@ -114,8 +125,11 @@ const SignupPage: React.FC = () => {
                   value={form.email}
                   onChange={handleChange}
                   required
-                  placeholder="Entrez votre email"
+                  placeholder="exemple@domaine.com"
                 />
+                <Form.Text className="text-muted">
+                  Format valide : nom@domaine.com
+                </Form.Text>
               </Form.Group>
 
               <Form.Group className="mb-3">
@@ -127,7 +141,7 @@ const SignupPage: React.FC = () => {
                   onChange={handleChange}
                   required
                   minLength={12}
-                  placeholder="Entrez votre mot de passe"
+                  placeholder="Minimum 12 caractères"
                 />
                 <Form.Text className="text-muted">
                   Le mot de passe doit contenir au moins 12 caractères

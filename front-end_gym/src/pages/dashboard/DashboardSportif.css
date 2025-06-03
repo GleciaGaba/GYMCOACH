@@ -1,0 +1,92 @@
+.dashboard-sportif {
+  padding: 2rem 0;
+  min-height: 100vh;
+  background-color: #f8f9fa;
+}
+
+.dashboard-sportif h1 {
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+
+.dashboard-sportif .card {
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1.5rem;
+}
+
+.dashboard-sportif .card-header {
+  background-color: #fff;
+  border-bottom: 1px solid #eee;
+  padding: 1rem;
+}
+
+.dashboard-sportif .card-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #2c3e50;
+}
+
+.dashboard-sportif .card-body {
+  padding: 1.5rem;
+}
+
+.workouts-list .card {
+  transition: transform 0.2s;
+}
+
+.workouts-list .card:hover {
+  transform: translateY(-2px);
+}
+
+.nutrition-details {
+  margin-top: 1rem;
+}
+
+.nutrition-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.nutrition-item:last-child {
+  border-bottom: none;
+}
+
+.stats-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.stat-item h3 {
+  font-size: 1rem;
+  color: #6c757d;
+  margin-bottom: 0.5rem;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.stat-label {
+  color: #6c757d;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.badge {
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+}

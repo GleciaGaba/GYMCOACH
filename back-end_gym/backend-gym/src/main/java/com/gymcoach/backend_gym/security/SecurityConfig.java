@@ -45,6 +45,7 @@ public class SecurityConfig {
 
           // 3) on ouvre tout sous /api/auth/**
           .authorizeHttpRequests(authz -> authz
+              .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
               .requestMatchers("/api/auth/**").permitAll()
               .requestMatchers("/api/users/register-sportif").hasRole("COACH")
               .requestMatchers("/api/users/change-password").authenticated()
@@ -58,19 +59,21 @@ public class SecurityConfig {
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
-    @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration cfg = new CorsConfiguration();
         cfg.setAllowedOrigins(List.of("http://localhost:5173"));
-        cfg.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
-        cfg.setAllowedHeaders(List.of("*"));
+        cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        cfg.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));
         cfg.setAllowCredentials(true);
+        cfg.setMaxAge(3600L);
+        
         UrlBasedCorsConfigurationSource src = new UrlBasedCorsConfigurationSource();
         src.registerCorsConfiguration("/**", cfg);
         return src;
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }

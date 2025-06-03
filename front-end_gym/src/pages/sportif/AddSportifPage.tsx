@@ -10,6 +10,7 @@ import {
 } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { addSportif } from "../../api/sportif";
+import { useAuth } from "../../contexts/AuthContext";
 import "./AddSportifPage.css";
 
 interface SportifForm {
@@ -22,6 +23,7 @@ interface SportifForm {
 
 const AddSportifPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -32,6 +34,22 @@ const AddSportifPage: React.FC = () => {
     password: "",
     confirmPassword: "",
   });
+
+  // Vérifier que l'utilisateur est un coach
+  React.useEffect(() => {
+    const token = localStorage.getItem("token");
+    const userRole = localStorage.getItem("userRole");
+    console.log("Token présent:", !!token);
+    console.log("Rôle utilisateur:", userRole);
+    console.log("User depuis context:", user);
+
+    if (!user || user.role !== "COACH") {
+      setError(
+        "Vous devez être connecté en tant que coach pour accéder à cette page"
+      );
+      navigate("/login");
+    }
+  }, [user, navigate]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
