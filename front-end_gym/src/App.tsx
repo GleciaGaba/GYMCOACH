@@ -1,17 +1,23 @@
 // src/App.tsx
-import React from "react";
+
+import { useLocation } from "react-router-dom";
 import Header from "./components/header/Header";
 import AppRouter from "./routes/AppRouter";
 import Footer from "./components/footer/Footer";
 
-const App = () => (
-  <div className="app-flex">
-    <Header />
-    <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-      <AppRouter />
+const App = () => {
+  const location = useLocation();
+  const isHomePage = location.pathname === "/";
+
+  return (
+    <div className="app-flex">
+      {!isHomePage && <Header />}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+        <AppRouter />
+      </div>
+      <Footer />
     </div>
-    <Footer />
-  </div>
-);
+  );
+};
 
 export default App;

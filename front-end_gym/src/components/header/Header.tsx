@@ -1,10 +1,12 @@
 // src/components/header/Header.tsx
 import { Navbar, Nav, Container } from "react-bootstrap";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import "./Header.css";
 
 export default function Header() {
   const { user, logout } = useAuth();
+  const location = useLocation();
 
   return (
     <Navbar bg="dark" variant="dark" expand="lg" className="glass-navbar">
@@ -17,9 +19,15 @@ export default function Header() {
           <Nav className="ms-auto">
             {!user && (
               <>
-                <Nav.Link as={Link} to="/login">
-                  Login
-                </Nav.Link>
+                {location.pathname === "/login" ? (
+                  <Nav.Link as={Link} to="/signup">
+                    SignUp
+                  </Nav.Link>
+                ) : (
+                  <Nav.Link as={Link} to="/login">
+                    Login
+                  </Nav.Link>
+                )}
               </>
             )}
             {user?.role === "COACH" && (

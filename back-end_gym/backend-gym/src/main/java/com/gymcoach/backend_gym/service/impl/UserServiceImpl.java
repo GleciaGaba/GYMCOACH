@@ -6,6 +6,8 @@ import com.gymcoach.backend_gym.model.User;
 import com.gymcoach.backend_gym.repository.UserRepository;
 import com.gymcoach.backend_gym.service.MailService;
 import com.gymcoach.backend_gym.service.UserService;
+import com.gymcoach.backend_gym.repository.CoachRepository;
+import com.gymcoach.backend_gym.model.Coach;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -20,13 +22,16 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepo;
     private final PasswordEncoder encoder;
     private final MailService mailService;
+    private final CoachRepository coachRepository;
 
     public UserServiceImpl(UserRepository userRepo,
                           PasswordEncoder encoder,
-                          MailService mailService) {
+                          MailService mailService,
+                          CoachRepository coachRepository) {
         this.userRepo = userRepo;
         this.encoder = encoder;
         this.mailService = mailService;
+        this.coachRepository = coachRepository;
     }
 
     @Override
@@ -74,6 +79,13 @@ public class UserServiceImpl implements UserService {
             .build();
 
         userRepo.save(sportif);
+
+        // Lier le sportif au coach dans la table de liaison
+        Coach coachLink = Coach.builder()
+            .coach(coach)
+            .athlete(sportif)
+            .build();
+        coachRepository.save(coachLink);
 
         // Envoyer l'email de confirmation
         String confirmUrl = "http://localhost:8080/api/auth/confirm?token=" + verificationToken;

@@ -65,7 +65,7 @@ public class AuthServiceImpl implements AuthService {
         mailService.sendVerificationEmail(coach.getEmail(), confirmUrl);
 
         // Pas de JWT à l'inscription
-        return new AuthResponse(null, coach.getEmail(), "Un e-mail de confirmation vous a été envoyé.", coach.getRole());
+        return new AuthResponse(null, coach.getEmail(), "Un e-mail de confirmation vous a été envoyé.", coach.getRole(), coach.getFirstName(), coach.getLastName());
     }
 
    /*  @Override
@@ -201,13 +201,8 @@ public void resendConfirmationEmail(String email) {
         }
 
         String token = jwtUtils.generateToken(user.getEmail());
-        return new AuthResponse(
-            token,
-            user.getEmail(),
-            "Connexion réussie",
-            user.getRole(),
-            user.getFirstName(),
-            user.getLastName()
-        );
+        // Si passwordChanged est null, on le considère comme false
+        String message = Boolean.FALSE.equals(user.getPasswordChanged()) ? "Vous devez changer votre mot de passe" : null;
+        return new AuthResponse(token, user.getEmail(), message, user.getRole(), user.getFirstName(), user.getLastName());
     }
 }

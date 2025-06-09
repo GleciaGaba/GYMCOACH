@@ -6,6 +6,7 @@ import DashboardCoach from "../pages/dashboard/DashboardCoach";
 import DashboardSportif from "../pages/dashboard/DashboardSportif";
 //import DashboardAdmin from "../pages/dashboard/DashboardAdmin";
 import AddSportifPage from "../pages/sportif/AddSportifPage";
+import AddExercisePage from "../pages/exercise/AddExercisePage";
 import { useAuth } from "../contexts/AuthContext";
 import ResendConfirmation from "../components/resend_confirmation/ResendConfirmation";
 
@@ -36,6 +37,16 @@ export default function AppRouter() {
         path="/add-sportif"
         element={
           user?.role === "COACH" ? <AddSportifPage /> : <Navigate to="/login" />
+        }
+      />
+      <Route
+        path="/add-exercise"
+        element={
+          user?.role === "COACH" ? (
+            <AddExercisePage />
+          ) : (
+            <Navigate to="/login" />
+          )
         }
       />
       <Route

@@ -56,6 +56,7 @@ public class User {
     @Column(name = "token_expiry")
     private LocalDateTime tokenExpiry;
 
+    @Builder.Default
     @Column(name = "password_changed")
     private Boolean passwordChanged = false;
 }
