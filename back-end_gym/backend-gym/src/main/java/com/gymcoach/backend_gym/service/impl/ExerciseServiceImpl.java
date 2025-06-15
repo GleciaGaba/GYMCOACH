@@ -47,21 +47,40 @@ public class ExerciseServiceImpl implements ExerciseService {
      */
     @Override
     public ExerciseDTO createExercise(ExerciseRequest request, String coachEmail) {
+        // Vérifier que le coach existe
         User coach = userRepository.findByEmail(coachEmail)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Coach introuvable"));
+
+        // Vérifier que le groupe musculaire existe
+        if (request.getMuscleGroupId() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "L'ID du groupe musculaire est obligatoire");
+        }
+
         MuscleGroup muscleGroup = muscleGroupRepository.findById(request.getMuscleGroupId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Groupe musculaire introuvable"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, 
+                    String.format("Groupe musculaire avec l'ID %d introuvable", request.getMuscleGroupId())));
+
+        // Créer l'exercice
         Exercise exercise = Exercise.builder()
                 .name(request.getName())
                 .description(request.getDescription())
                 .exerciseUrl(request.getExerciseUrl())
+                .equipment(request.getEquipment())
+                .instructions(request.getInstructions())
+                .difficulty(request.getDifficulty())
                 .muscleGroup(muscleGroup)
                 .coach(coach)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
-        exerciseRepository.save(exercise);
-        return toDTO(exercise);
+
+        try {
+            exerciseRepository.save(exercise);
+            return toDTO(exercise);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
+                "Erreur lors de la création de l'exercice: " + e.getMessage());
+        }
     }
 
     /**
@@ -81,6 +100,9 @@ public class ExerciseServiceImpl implements ExerciseService {
         exercise.setName(request.getName());
         exercise.setDescription(request.getDescription());
         exercise.setExerciseUrl(request.getExerciseUrl());
+        exercise.setEquipment(request.getEquipment());
+        exercise.setInstructions(request.getInstructions());
+        exercise.setDifficulty(request.getDifficulty());
         exercise.setMuscleGroup(muscleGroup);
         exercise.setUpdatedAt(LocalDateTime.now());
         exerciseRepository.save(exercise);
@@ -111,6 +133,9 @@ public class ExerciseServiceImpl implements ExerciseService {
                 .name(exercise.getName())
                 .description(exercise.getDescription())
                 .exerciseUrl(exercise.getExerciseUrl())
+                .equipment(exercise.getEquipment())
+                .instructions(exercise.getInstructions())
+                .difficulty(exercise.getDifficulty())
                 .muscleGroupLabel(exercise.getMuscleGroup() != null ? exercise.getMuscleGroup().getLabel() : null)
                 .build();
     }

@@ -4,6 +4,7 @@ import { useLocation } from "react-router-dom";
 import Header from "./components/header/Header";
 import AppRouter from "./routes/AppRouter";
 import Footer from "./components/footer/Footer";
+import CreateWorkoutPage from "./pages/workout/CreateWorkoutPage";
 
 const App = () => {
   const location = useLocation();

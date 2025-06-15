@@ -5,17 +5,16 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ExerciseDTO {
+public class MuscleGroupDTO {
     private Integer id;
-    private String name;
+    private String label;
     private String description;
-    private String exerciseUrl;
-    private String equipment;
-    private String instructions;
-    private String difficulty;
-    private String muscleGroupLabel;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 } 

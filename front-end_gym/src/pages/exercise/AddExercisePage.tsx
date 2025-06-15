@@ -1,4 +1,4 @@
-import React, { useState, FormEvent } from "react";
+import React, { useState, FormEvent, useEffect } from "react";
 import {
   Container,
   Form,
@@ -10,17 +10,14 @@ import {
 } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import { exerciseApi, CreateExerciseDto } from "../../api/exercise";
+import axios from "axios";
+import { API_URL } from "../../config";
 import "./AddExercisePage.css";
 
-interface ExerciseForm {
-  name: string;
-  description: string;
-  muscleGroup: string;
-  difficulty: string;
-  equipment: string;
-  instructions: string;
-  videoUrl?: string;
-  imageUrl?: string;
+interface MuscleGroup {
+  id: number;
+  label: string;
 }
 
 const AddExercisePage: React.FC = () => {
@@ -29,19 +26,19 @@ const AddExercisePage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState<ExerciseForm>({
+  const [muscleGroups, setMuscleGroups] = useState<MuscleGroup[]>([]);
+  const [form, setForm] = useState<CreateExerciseDto>({
     name: "",
     description: "",
-    muscleGroup: "",
+    muscleGroupId: 0,
     difficulty: "INTERMEDIATE",
     equipment: "",
     instructions: "",
-    videoUrl: "",
-    imageUrl: "",
+    exerciseUrl: "",
   });
 
   // Vérifier que l'utilisateur est un coach
-  React.useEffect(() => {
+  useEffect(() => {
     if (!user || user.role !== "COACH") {
       setError(
         "Vous devez être connecté en tant que coach pour accéder à cette page"
@@ -50,12 +47,41 @@ const AddExercisePage: React.FC = () => {
     }
   }, [user, navigate]);
 
+  // Charger les groupes musculaires
+  useEffect(() => {
+    const fetchMuscleGroups = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          throw new Error("No authentication token found");
+        }
+
+        const response = await axios.get(`${API_URL}/muscle-groups`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setMuscleGroups(response.data);
+        if (response.data.length > 0) {
+          setForm((prev) => ({ ...prev, muscleGroupId: response.data[0].id }));
+        }
+      } catch (err) {
+        setError("Erreur lors du chargement des groupes musculaires");
+      }
+    };
+    fetchMuscleGroups();
+  }, []);
+
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >
   ) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: name === "muscleGroupId" ? parseInt(value) : value,
+    }));
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -63,30 +89,51 @@ const AddExercisePage: React.FC = () => {
     setError(null);
     setSuccess(null);
 
+    // Validation côté client
+    if (!form.name.trim()) {
+      setError("Le nom de l'exercice est obligatoire");
+      return;
+    }
+    if (!form.muscleGroupId) {
+      setError("Le groupe musculaire est obligatoire");
+      return;
+    }
+    if (!form.description.trim()) {
+      setError("La description est obligatoire");
+      return;
+    }
+    if (!form.equipment.trim()) {
+      setError("L'équipement est obligatoire");
+      return;
+    }
+    if (!form.instructions.trim()) {
+      setError("Les instructions sont obligatoires");
+      return;
+    }
+
     try {
       setLoading(true);
-      // TODO: Implémenter l'appel API pour créer l'exercice
-      // await createExercise(form);
-
+      await exerciseApi.createExercise(form);
       setSuccess("L'exercice a été créé avec succès !");
 
       // Réinitialiser le formulaire après succès
       setForm({
         name: "",
         description: "",
-        muscleGroup: "",
+        muscleGroupId: muscleGroups[0]?.id || 0,
         difficulty: "INTERMEDIATE",
         equipment: "",
         instructions: "",
-        videoUrl: "",
-        imageUrl: "",
+        exerciseUrl: "",
       });
+
+      // Rediriger vers le tableau de bord après 2 secondes
+      setTimeout(() => {
+        navigate("/dashboard_coach");
+      }, 2000);
     } catch (err: any) {
       console.error("Erreur lors de la création de l'exercice:", err);
-      setError(
-        err.response?.data?.message ||
-          "Erreur lors de la création de l'exercice"
-      );
+      setError(err.message || "Erreur lors de la création de l'exercice");
     } finally {
       setLoading(false);
     }
@@ -141,14 +188,21 @@ const AddExercisePage: React.FC = () => {
                 <Col md={6}>
                   <Form.Group className="mb-3">
                     <Form.Label>Groupe musculaire</Form.Label>
-                    <Form.Control
-                      type="text"
-                      name="muscleGroup"
-                      value={form.muscleGroup}
+                    <Form.Select
+                      name="muscleGroupId"
+                      value={form.muscleGroupId}
                       onChange={handleChange}
                       required
-                      placeholder="Ex: Pectoraux, Jambes, etc."
-                    />
+                    >
+                      <option value="">
+                        Sélectionnez un groupe musculaire
+                      </option>
+                      {muscleGroups.map((group) => (
+                        <option key={group.id} value={group.id}>
+                          {group.label}
+                        </option>
+                      ))}
+                    </Form.Select>
                   </Form.Group>
                 </Col>
                 <Col md={6}>
@@ -202,27 +256,15 @@ const AddExercisePage: React.FC = () => {
               </Row>
 
               <Row>
-                <Col md={6}>
+                <Col md={12}>
                   <Form.Group className="mb-3">
                     <Form.Label>URL de la vidéo (optionnel)</Form.Label>
                     <Form.Control
                       type="url"
-                      name="videoUrl"
-                      value={form.videoUrl}
+                      name="exerciseUrl"
+                      value={form.exerciseUrl}
                       onChange={handleChange}
                       placeholder="Lien vers une vidéo de démonstration"
-                    />
-                  </Form.Group>
-                </Col>
-                <Col md={6}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>URL de l'image (optionnel)</Form.Label>
-                    <Form.Control
-                      type="url"
-                      name="imageUrl"
-                      value={form.imageUrl}
-                      onChange={handleChange}
-                      placeholder="Lien vers une image de l'exercice"
                     />
                   </Form.Group>
                 </Col>

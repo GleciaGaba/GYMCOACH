@@ -9,6 +9,7 @@ import AddSportifPage from "../pages/sportif/AddSportifPage";
 import AddExercisePage from "../pages/exercise/AddExercisePage";
 import { useAuth } from "../contexts/AuthContext";
 import ResendConfirmation from "../components/resend_confirmation/ResendConfirmation";
+import CreateWorkoutPage from "../pages/workout/CreateWorkoutPage";
 
 export default function AppRouter() {
   const { user } = useAuth();
@@ -54,6 +55,16 @@ export default function AppRouter() {
         element={
           user?.role === "SPORTIF" ? (
             <DashboardSportif />
+          ) : (
+            <Navigate to="/login" />
+          )
+        }
+      />
+      <Route
+        path="/create-workout"
+        element={
+          user?.role === "COACH" ? (
+            <CreateWorkoutPage />
           ) : (
             <Navigate to="/login" />
           )
