@@ -1,20 +1,16 @@
 package com.gymcoach.backend_gym.dto;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
+import lombok.Builder;
 
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class MuscleGroupDTO {
     private Integer id;
     private String label;
     private String description;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 } 

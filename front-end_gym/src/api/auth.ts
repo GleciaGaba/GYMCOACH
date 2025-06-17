@@ -7,7 +7,6 @@ const API = axios.create({
     "Content-Type": "application/json",
     Accept: "application/json",
   },
-  withCredentials: true,
 });
 
 // Intercepteur pour injecter le token s'il existe

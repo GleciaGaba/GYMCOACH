@@ -1,37 +1,39 @@
+// src/main/java/com/gymcoach/backend_gym/dto/ExerciseRequest.java
 package com.gymcoach.backend_gym.dto;
 
+import com.gymcoach.backend_gym.model.Exercise.Difficulty;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class ExerciseRequest {
-    @NotBlank(message = "Le nom est obligatoire")
-    @Size(min = 3, max = 100, message = "Le nom doit contenir entre 3 et 100 caractères")
+
+    @NotBlank @Size(min = 2, max = 100)
     private String name;
 
-    @Size(max = 500, message = "La description ne doit pas dépasser 500 caractères")
+    @Size(max = 500)
     private String description;
 
-    @Size(max = 255, message = "L'URL ne doit pas dépasser 255 caractères")
+    @Size(max = 255)
     private String exerciseUrl;
 
-    @Size(max = 255, message = "L'équipement ne doit pas dépasser 255 caractères")
+    @Size(max = 200)
     private String equipment;
 
-    @Size(max = 1000, message = "Les instructions ne doivent pas dépasser 1000 caractères")
+    @Size(max = 2000)
     private String instructions;
 
-    @Size(max = 50, message = "La difficulté ne doit pas dépasser 50 caractères")
-    private String difficulty;
+    @NotNull(message = "La difficulté est obligatoire")
+    private Difficulty difficulty;
 
     @NotNull(message = "Le groupe musculaire est obligatoire")
     private Integer muscleGroupId;
-} 
+
+    @Size(max = 100)
+    private String muscleSubgroup;
+}

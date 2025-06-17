@@ -1,11 +1,26 @@
+/**
+ * Page de confirmation de compte
+ *
+ * Cette page est utilisée pour confirmer le compte d'un coach après son inscription.
+ * Elle est accessible via un lien envoyé par email contenant un token de confirmation.
+ *
+ * Fonctionnement :
+ * 1. Récupère le token depuis l'URL
+ * 2. Envoie le token au backend pour confirmer le compte
+ * 3. Affiche un message de succès/erreur
+ * 4. Redirige vers la page de connexion en cas de succès
+ */
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { confirmCoachAccount } from "../api/auth";
 import { Alert, Spinner } from "react-bootstrap";
 
 function ConfirmAccountPage() {
+  // Récupère le token depuis l'URL
   const { token } = useParams();
   const navigate = useNavigate();
+
+  // États pour gérer le statut de la confirmation et les messages
   const [status, setStatus] = useState<"loading" | "success" | "error">(
     "loading"
   );
@@ -13,6 +28,7 @@ function ConfirmAccountPage() {
 
   useEffect(() => {
     const confirmAccount = async () => {
+      // Vérifie si le token est présent
       if (!token) {
         setStatus("error");
         setMessage("Token manquant");
@@ -20,14 +36,17 @@ function ConfirmAccountPage() {
       }
 
       try {
+        // Appelle l'API pour confirmer le compte
         await confirmCoachAccount(token);
         setStatus("success");
         setMessage("Compte confirmé avec succès !");
+
         // Redirection vers la page de login après 2 secondes
         setTimeout(() => {
           navigate("/login");
         }, 2000);
       } catch (error: any) {
+        // Gestion des erreurs
         setStatus("error");
         setMessage(
           error.response?.data?.message ||
@@ -45,6 +64,7 @@ function ConfirmAccountPage() {
         <div className="col-md-6">
           <div className="card">
             <div className="card-body text-center">
+              {/* Affichage pendant le chargement */}
               {status === "loading" && (
                 <>
                   <Spinner animation="border" role="status" />
@@ -52,6 +72,7 @@ function ConfirmAccountPage() {
                 </>
               )}
 
+              {/* Message de succès */}
               {status === "success" && (
                 <Alert variant="success">
                   <Alert.Heading>Compte confirmé !</Alert.Heading>
@@ -60,6 +81,7 @@ function ConfirmAccountPage() {
                 </Alert>
               )}
 
+              {/* Message d'erreur */}
               {status === "error" && (
                 <Alert variant="danger">
                   <Alert.Heading>Erreur</Alert.Heading>

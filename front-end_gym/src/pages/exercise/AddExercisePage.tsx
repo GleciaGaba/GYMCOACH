@@ -1,295 +1,422 @@
-import React, { useState, FormEvent, useEffect } from "react";
-import {
-  Container,
-  Form,
-  Button,
-  Card,
-  Alert,
-  Row,
-  Col,
-} from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+// src/components/AddExercisePage.tsx
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
-import { exerciseApi, CreateExerciseDto } from "../../api/exercise";
-import axios from "axios";
-import { API_URL } from "../../config";
+import { useNavigate } from "react-router-dom";
+import {
+  exerciseApi,
+  CreateExerciseDto,
+  MuscleGroup,
+  Exercise,
+} from "../../api/exercise";
 import "./AddExercisePage.css";
 
-interface MuscleGroup {
-  id: number;
-  label: string;
+// Types pour les messages d'erreur
+interface ErrorState {
+  message: string;
+  type: "error" | "warning" | "info";
+  details?: string;
 }
 
+/**
+ * Composant AddExercisePage
+ * Permet aux coachs de créer et consulter leurs exercices.
+ */
 const AddExercisePage: React.FC = () => {
-  const navigate = useNavigate();
   const { user } = useAuth();
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [muscleGroups, setMuscleGroups] = useState<MuscleGroup[]>([]);
-  const [form, setForm] = useState<CreateExerciseDto>({
+  const navigate = useNavigate();
+
+  // Formulaire n'inclut plus coachId : le backend le déduit du JWT
+  const [formData, setFormData] = useState<CreateExerciseDto>({
     name: "",
     description: "",
-    muscleGroupId: 0,
-    difficulty: "INTERMEDIATE",
+    exerciseUrl: "",
     equipment: "",
     instructions: "",
-    exerciseUrl: "",
+    difficulty: "BEGINNER",
+    muscleGroupId: 0,
+    muscleSubgroup: "",
   });
 
-  // Vérifier que l'utilisateur est un coach
-  useEffect(() => {
-    if (!user || user.role !== "COACH") {
-      setError(
-        "Vous devez être connecté en tant que coach pour accéder à cette page"
-      );
-      navigate("/login");
+  const [error, setError] = useState<ErrorState | null>(null);
+  const [muscleGroups, setMuscleGroups] = useState<MuscleGroup[]>([]);
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [isFormVisible, setIsFormVisible] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Fonction utilitaire pour gérer les erreurs
+  const handleError = (error: any, context: string) => {
+    console.error(`Erreur ${context}:`, error);
+
+    let errorMessage = "Une erreur est survenue";
+    let errorType: "error" | "warning" | "info" = "error";
+    let errorDetails = "";
+
+    if (error.response) {
+      // Erreur avec réponse du serveur
+      const { status, data } = error.response;
+
+      switch (status) {
+        case 400:
+          errorMessage = "Données invalides";
+          errorType = "warning";
+          errorDetails =
+            data.message || "Veuillez vérifier les informations saisies";
+          break;
+        case 401:
+          errorMessage = "Session expirée";
+          errorType = "warning";
+          errorDetails = "Veuillez vous reconnecter";
+          break;
+        case 403:
+          errorMessage = "Accès refusé";
+          errorType = "error";
+          errorDetails = "Vous n'avez pas les permissions nécessaires";
+          break;
+        case 404:
+          errorMessage = "Ressource non trouvée";
+          errorType = "warning";
+          break;
+        case 500:
+          errorMessage = "Erreur serveur";
+          errorType = "error";
+          errorDetails =
+            "Le serveur rencontre des difficultés. Veuillez réessayer plus tard";
+          break;
+        default:
+          errorMessage = data.message || "Une erreur est survenue";
+      }
+    } else if (error.request) {
+      // Erreur de réseau
+      errorMessage = "Erreur de connexion";
+      errorType = "error";
+      errorDetails = "Veuillez vérifier votre connexion internet";
+    } else {
+      // Autre type d'erreur
+      errorMessage = error.message || "Une erreur inattendue est survenue";
     }
-  }, [user, navigate]);
 
-  // Charger les groupes musculaires
+    setError({
+      message: errorMessage,
+      type: errorType,
+      details: errorDetails,
+    });
+  };
+
+  // Charge les données initiales
   useEffect(() => {
-    const fetchMuscleGroups = async () => {
+    const loadData = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          throw new Error("No authentication token found");
-        }
-
-        const response = await axios.get(`${API_URL}/muscle-groups`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setMuscleGroups(response.data);
-        if (response.data.length > 0) {
-          setForm((prev) => ({ ...prev, muscleGroupId: response.data[0].id }));
-        }
+        const [groups, list] = await Promise.all([
+          exerciseApi.getMuscleGroups(),
+          exerciseApi.getExercises(),
+        ]);
+        setMuscleGroups(groups);
+        setExercises(list);
       } catch (err) {
-        setError("Erreur lors du chargement des groupes musculaires");
+        handleError(err, "de chargement");
+      } finally {
+        setLoading(false);
       }
     };
-    fetchMuscleGroups();
+
+    loadData();
   }, []);
 
+  // Met à jour formData pour tous les champs
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >
   ) => {
     const { name, value } = e.target;
-    setForm((prev) => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: name === "muscleGroupId" ? parseInt(value) : value,
+      [name]: name === "muscleGroupId" ? Number(value) : value,
     }));
+    // Efface l'erreur quand l'utilisateur modifie le formulaire
+    setError(null);
   };
 
-  const handleSubmit = async (e: FormEvent) => {
+  // Soumission : crée l'exercice et l'ajoute à la liste
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setSuccess(null);
+    if (!user) {
+      setError({
+        message: "Session expirée",
+        type: "warning",
+        details: "Veuillez vous reconnecter",
+      });
+      return;
+    }
 
-    // Validation côté client
-    if (!form.name.trim()) {
-      setError("Le nom de l'exercice est obligatoire");
-      return;
-    }
-    if (!form.muscleGroupId) {
-      setError("Le groupe musculaire est obligatoire");
-      return;
-    }
-    if (!form.description.trim()) {
-      setError("La description est obligatoire");
-      return;
-    }
-    if (!form.equipment.trim()) {
-      setError("L'équipement est obligatoire");
-      return;
-    }
-    if (!form.instructions.trim()) {
-      setError("Les instructions sont obligatoires");
-      return;
-    }
+    setIsSubmitting(true);
+    setError(null);
 
     try {
-      setLoading(true);
-      await exerciseApi.createExercise(form);
-      setSuccess("L'exercice a été créé avec succès !");
+      const created = await exerciseApi.createExercise(formData);
+      setExercises((prev) => [created, ...prev]);
 
-      // Réinitialiser le formulaire après succès
-      setForm({
+      // Réinitialise le formulaire
+      setFormData({
         name: "",
         description: "",
-        muscleGroupId: muscleGroups[0]?.id || 0,
-        difficulty: "INTERMEDIATE",
+        exerciseUrl: "",
         equipment: "",
         instructions: "",
-        exerciseUrl: "",
+        difficulty: "BEGINNER",
+        muscleGroupId: 0,
+        muscleSubgroup: "",
       });
 
-      // Rediriger vers le tableau de bord après 2 secondes
-      setTimeout(() => {
-        navigate("/dashboard_coach");
-      }, 2000);
-    } catch (err: any) {
-      console.error("Erreur lors de la création de l'exercice:", err);
-      setError(err.message || "Erreur lors de la création de l'exercice");
+      setIsFormVisible(false);
+
+      // Affiche un message de succès
+      setError({
+        message: "Exercice créé avec succès",
+        type: "info",
+        details: "L'exercice a été ajouté à votre liste",
+      });
+    } catch (err) {
+      handleError(err, "de création");
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
+  const handleExerciseClick = (exerciseId: number) => {
+    navigate(`/exercises/${exerciseId}`);
+  };
+
+  const handleDelete = async (exerciseId: number, e: React.MouseEvent) => {
+    e.stopPropagation(); // Empêche la navigation vers les détails
+    if (window.confirm("Êtes-vous sûr de vouloir supprimer cet exercice ?")) {
+      try {
+        await exerciseApi.deleteExercise(exerciseId);
+        setExercises(exercises.filter((ex) => ex.id !== exerciseId));
+      } catch (err) {
+        setError({
+          message: "Erreur lors de la suppression de l'exercice",
+          type: "error",
+        });
+        console.error(err);
+      }
+    }
+  };
+
+  const handleEdit = (exerciseId: number, e: React.MouseEvent) => {
+    e.stopPropagation(); // Empêche la navigation vers les détails
+    navigate(`/exercises/edit/${exerciseId}`);
+  };
+
+  // Composant pour afficher les messages
+  const MessageDisplay: React.FC<{ error: ErrorState }> = ({ error }) => (
+    <div className={`message ${error.type}`}>
+      <div className="message-header">{error.message}</div>
+      {error.details && <div className="message-details">{error.details}</div>}
+    </div>
+  );
+
   return (
-    <div className="add-exercise-container">
-      <Container>
-        <Card className="add-exercise-card">
-          <Card.Header>
-            <h2>Ajouter un nouvel exercice</h2>
-          </Card.Header>
-          <Card.Body>
-            {error && <Alert variant="danger">{error}</Alert>}
-            {success && <Alert variant="success">{success}</Alert>}
+    <div className="container">
+      <header className="page-header">
+        <h1>Gestion des exercices</h1>
+        <button
+          onClick={() => setIsFormVisible(!isFormVisible)}
+          className="toggle-form-btn"
+          aria-expanded={isFormVisible}
+        >
+          {isFormVisible ? "Masquer le formulaire" : "Ajouter un exercice"}
+        </button>
+      </header>
 
-            <Form onSubmit={handleSubmit}>
-              <Row>
-                <Col md={12}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Nom de l'exercice</Form.Label>
-                    <Form.Control
-                      type="text"
-                      name="name"
-                      value={form.name}
-                      onChange={handleChange}
-                      required
-                      placeholder="Entrez le nom de l'exercice"
-                    />
-                  </Form.Group>
-                </Col>
-              </Row>
+      {error && <MessageDisplay error={error} />}
 
-              <Row>
-                <Col md={12}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Description</Form.Label>
-                    <Form.Control
-                      as="textarea"
-                      rows={3}
-                      name="description"
-                      value={form.description}
-                      onChange={handleChange}
-                      required
-                      placeholder="Décrivez l'exercice"
-                    />
-                  </Form.Group>
-                </Col>
-              </Row>
-
-              <Row>
-                <Col md={6}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Groupe musculaire</Form.Label>
-                    <Form.Select
-                      name="muscleGroupId"
-                      value={form.muscleGroupId}
-                      onChange={handleChange}
-                      required
-                    >
-                      <option value="">
-                        Sélectionnez un groupe musculaire
-                      </option>
-                      {muscleGroups.map((group) => (
-                        <option key={group.id} value={group.id}>
-                          {group.label}
-                        </option>
-                      ))}
-                    </Form.Select>
-                  </Form.Group>
-                </Col>
-                <Col md={6}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Niveau de difficulté</Form.Label>
-                    <Form.Select
-                      name="difficulty"
-                      value={form.difficulty}
-                      onChange={handleChange}
-                      required
-                    >
-                      <option value="BEGINNER">Débutant</option>
-                      <option value="INTERMEDIATE">Intermédiaire</option>
-                      <option value="ADVANCED">Avancé</option>
-                    </Form.Select>
-                  </Form.Group>
-                </Col>
-              </Row>
-
-              <Row>
-                <Col md={12}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Équipement nécessaire</Form.Label>
-                    <Form.Control
-                      type="text"
-                      name="equipment"
-                      value={form.equipment}
-                      onChange={handleChange}
-                      required
-                      placeholder="Ex: Haltères, Barre, etc."
-                    />
-                  </Form.Group>
-                </Col>
-              </Row>
-
-              <Row>
-                <Col md={12}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Instructions</Form.Label>
-                    <Form.Control
-                      as="textarea"
-                      rows={4}
-                      name="instructions"
-                      value={form.instructions}
-                      onChange={handleChange}
-                      required
-                      placeholder="Détaillez les étapes de l'exercice"
-                    />
-                  </Form.Group>
-                </Col>
-              </Row>
-
-              <Row>
-                <Col md={12}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>URL de la vidéo (optionnel)</Form.Label>
-                    <Form.Control
-                      type="url"
-                      name="exerciseUrl"
-                      value={form.exerciseUrl}
-                      onChange={handleChange}
-                      placeholder="Lien vers une vidéo de démonstration"
-                    />
-                  </Form.Group>
-                </Col>
-              </Row>
-
-              <div className="d-grid gap-2">
-                <Button
-                  variant="primary"
-                  type="submit"
-                  disabled={loading}
-                  className="btn-submit"
-                >
-                  {loading ? "Création en cours..." : "Créer l'exercice"}
-                </Button>
-                <Button
-                  variant="outline-secondary"
-                  onClick={() => navigate("/dashboard_coach")}
-                >
-                  Annuler
-                </Button>
+      {loading ? (
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Chargement des données...</p>
+        </div>
+      ) : (
+        <>
+          {isFormVisible && (
+            <form onSubmit={handleSubmit} className="form-container">
+              <div className="form-group">
+                <label htmlFor="name">Nom</label>
+                <input
+                  id="name"
+                  name="name"
+                  type="text"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
+                  disabled={isSubmitting}
+                />
               </div>
-            </Form>
-          </Card.Body>
-        </Card>
-      </Container>
+
+              <div className="form-group">
+                <label htmlFor="muscleGroupId">Groupe musculaire</label>
+                <select
+                  id="muscleGroupId"
+                  name="muscleGroupId"
+                  value={formData.muscleGroupId}
+                  onChange={handleChange}
+                  required
+                  disabled={isSubmitting}
+                >
+                  <option value={0}>Sélectionner…</option>
+                  {muscleGroups.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="muscleSubgroup">Sous-groupe</label>
+                <input
+                  id="muscleSubgroup"
+                  name="muscleSubgroup"
+                  type="text"
+                  value={formData.muscleSubgroup}
+                  onChange={handleChange}
+                  disabled={isSubmitting}
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="difficulty">Difficulté</label>
+                <select
+                  id="difficulty"
+                  name="difficulty"
+                  value={formData.difficulty}
+                  onChange={handleChange}
+                  required
+                  disabled={isSubmitting}
+                >
+                  <option value="BEGINNER">Débutant</option>
+                  <option value="INTERMEDIATE">Intermédiaire</option>
+                  <option value="ADVANCED">Avancé</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="equipment">Équipement</label>
+                <input
+                  id="equipment"
+                  name="equipment"
+                  type="text"
+                  value={formData.equipment}
+                  onChange={handleChange}
+                  disabled={isSubmitting}
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="exerciseUrl">URL Image/Vidéo</label>
+                <input
+                  id="exerciseUrl"
+                  name="exerciseUrl"
+                  type="url"
+                  value={formData.exerciseUrl}
+                  onChange={handleChange}
+                  disabled={isSubmitting}
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="description">Description</label>
+                <textarea
+                  id="description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  required
+                  disabled={isSubmitting}
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="instructions">Instructions</label>
+                <textarea
+                  id="instructions"
+                  name="instructions"
+                  value={formData.instructions}
+                  onChange={handleChange}
+                  required
+                  disabled={isSubmitting}
+                />
+              </div>
+
+              <div className="form-actions">
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Création en cours..." : "Créer l'exercice"}
+                </button>
+              </div>
+            </form>
+          )}
+
+          <div className="exercises-grid">
+            {exercises.map((ex) => (
+              <div
+                key={ex.id}
+                className="exercise-card"
+                onClick={() => handleExerciseClick(ex.id)}
+                role="button"
+                tabIndex={0}
+                onKeyPress={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    handleExerciseClick(ex.id);
+                  }
+                }}
+              >
+                {ex.exerciseUrl && (
+                  <img
+                    src={ex.exerciseUrl}
+                    alt={ex.name}
+                    className="exercise-image"
+                  />
+                )}
+                <div className="exercise-content">
+                  <div className="exercise-header">
+                    <h3>{ex.name}</h3>
+                    <div className="exercise-actions">
+                      <button
+                        onClick={(e) => handleEdit(ex.id, e)}
+                        className="action-button edit"
+                        title="Modifier l'exercice"
+                      >
+                        <i className="fas fa-edit"></i>
+                      </button>
+                      <button
+                        onClick={(e) => handleDelete(ex.id, e)}
+                        className="action-button delete"
+                        title="Supprimer l'exercice"
+                      >
+                        <i className="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <p className="muscle-subgroup">
+                    {ex.muscleSubgroup || "Sous-groupe non spécifié"}
+                  </p>
+                  <div className="exercise-tags">
+                    <span className="tag-muscle">{ex.muscleGroupLabel}</span>
+                    <span className="tag-difficulty">{ex.difficulty}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 };

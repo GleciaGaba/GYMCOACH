@@ -1,138 +1,112 @@
+// src/api/exercise.ts
 import axios from "axios";
 import { API_URL } from "../config";
+import API from "./auth";
 
-const EXERCISE_API_URL = `${API_URL}/exercises`;
+// Correction de l'URL pour correspondre au mapping du backend
+const EXERCISE_API_BASE = `${API_URL}/v1/exercises`;
+
+export interface MuscleGroup {
+  id: number;
+  label: string;
+  description?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
 
 export interface Exercise {
   id: number;
   name: string;
   description: string;
-  exerciseUrl?: string;
+  exerciseUrl: string;
   equipment: string;
   instructions: string;
   difficulty: string;
+  muscleGroupId: number;
   muscleGroupLabel: string;
+  muscleSubgroup: string;
+  coachId: number;
+  coachName: string;
 }
 
+/**
+ * DTO utilisé pour la création/mise à jour d'un exercice.
+ * Le champ coachId est **déduit** du token côté serveur.
+ */
 export interface CreateExerciseDto {
   name: string;
   description: string;
-  muscleGroupId: number;
-  difficulty: string;
+  exerciseUrl: string;
   equipment: string;
   instructions: string;
-  exerciseUrl?: string;
+  difficulty: string;
+  muscleGroupId: number;
+  muscleSubgroup: string;
 }
 
 export const exerciseApi = {
-  createExercise: async (
-    exerciseData: CreateExerciseDto
-  ): Promise<Exercise> => {
+  async createExercise(dto: CreateExerciseDto): Promise<Exercise> {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("No authentication token found");
+    }
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        throw new Error("No authentication token found");
-      }
-
-      const response = await axios.post(EXERCISE_API_URL, exerciseData, {
+      const res = await axios.post<Exercise>(EXERCISE_API_BASE, dto, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
-      return response.data;
+      return res.data;
     } catch (error: any) {
-      if (error.response?.data?.errors) {
-        const validationErrors = error.response.data.errors;
-        const errorMessage = Object.entries(validationErrors)
-          .map(([field, message]) => `${field}: ${message}`)
-          .join("\n");
-        throw new Error(errorMessage);
-      }
-      throw error;
-    }
-  },
-
-  getExercises: async (): Promise<Exercise[]> => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        throw new Error("No authentication token found");
-      }
-
-      const response = await axios.get(`${EXERCISE_API_URL}/my_exercises`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching exercises:", error);
-      throw error;
-    }
-  },
-
-  getExerciseById: async (id: number): Promise<Exercise> => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        throw new Error("No authentication token found");
-      }
-
-      const response = await axios.get(`${EXERCISE_API_URL}/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching exercise:", error);
-      throw error;
-    }
-  },
-
-  updateExercise: async (
-    id: number,
-    exerciseData: Partial<CreateExerciseDto>
-  ): Promise<Exercise> => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        throw new Error("No authentication token found");
-      }
-
-      const response = await axios.put(
-        `${EXERCISE_API_URL}/${id}`,
-        exerciseData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
+      console.error(
+        "Erreur lors de la création de l'exercice:",
+        error.response?.data || error.message
       );
-      return response.data;
-    } catch (error) {
-      console.error("Error updating exercise:", error);
+      throw error;
+    }
+  },
+
+  async getExercises(): Promise<Exercise[]> {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("No authentication token found");
+    }
+    try {
+      const res = await axios.get<Exercise[]>(EXERCISE_API_BASE, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      return res.data;
+    } catch (error: any) {
+      console.error(
+        "Erreur lors de la récupération des exercices:",
+        error.response?.data || error.message
+      );
+      throw error;
+    }
+  },
+
+  async getMuscleGroups(): Promise<MuscleGroup[]> {
+    try {
+      const res = await API.get<MuscleGroup[]>("/api/muscle-groups");
+      return res.data.filter(
+        (g, idx, arr) => arr.findIndex((x) => x.label === g.label) === idx
+      );
+    } catch (error: any) {
+      console.error(
+        "Erreur lors de la récupération des groupes musculaires:",
+        error.response?.data || error.message
+      );
       throw error;
     }
   },
 
   deleteExercise: async (id: number): Promise<void> => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        throw new Error("No authentication token found");
-      }
-
-      await axios.delete(`${EXERCISE_API_URL}/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-    } catch (error) {
-      console.error("Error deleting exercise:", error);
-      throw error;
-    }
+    await API.delete(`/exercises/${id}`);
   },
+
+  // (autres méthodes : updateExercise, deleteExercise, etc.)
 };

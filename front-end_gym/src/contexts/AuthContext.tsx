@@ -10,6 +10,26 @@ import {
 import { login as loginAPI, signupCoach as signupAPI } from "../api/auth";
 import { useNavigate } from "react-router-dom";
 
+// Fonction pour décoder le token JWT
+function decodeJwt(token: string) {
+  try {
+    const base64Url = token.split(".")[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map(function (c) {
+          return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+        })
+        .join("")
+    );
+    return JSON.parse(jsonPayload);
+  } catch (error) {
+    console.error("Error decoding JWT:", error);
+    return null;
+  }
+}
+
 interface User {
   id: number;
   email: string;
@@ -39,8 +59,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const stored = localStorage.getItem("user");
-    if (stored) {
-      setUser(JSON.parse(stored));
+    const token = localStorage.getItem("token");
+    if (stored && token) {
+      const user = JSON.parse(stored);
+      // Décoder le token pour obtenir l'ID de l'utilisateur
+      const decodedToken = decodeJwt(token);
+      if (decodedToken && decodedToken.sub) {
+        user.id = decodedToken.sub;
+        setUser(user);
+        localStorage.setItem("user", JSON.stringify(user));
+      }
     }
   }, []);
 
@@ -61,8 +89,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error("Rôle utilisateur invalide");
       }
 
+      // Décoder le token pour obtenir l'ID de l'utilisateur
+      const decodedToken = decodeJwt(token);
+      if (!decodedToken || !decodedToken.sub) {
+        throw new Error("Token invalide");
+      }
+
       const user: User = {
-        id: 0, // L'ID n'est pas nécessaire pour le moment
+        id: decodedToken.sub, // Utiliser l'ID du token
         email: userEmail,
         token: token,
         role: role,
@@ -70,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         lastName: lastName,
       };
 
-      console.log("Utilisateur connecté avec le rôle:", user.role);
+      console.log("Utilisateur connecté:", user);
       setUser(user);
       localStorage.setItem("user", JSON.stringify(user));
       localStorage.setItem("token", token);
