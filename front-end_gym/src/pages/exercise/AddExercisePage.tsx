@@ -43,6 +43,8 @@ const AddExercisePage: React.FC = () => {
   const [isFormVisible, setIsFormVisible] = useState(true);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedMuscleGroupFilter, setSelectedMuscleGroupFilter] =
+    useState<number>(0);
 
   // Fonction utilitaire pour gérer les erreurs
   const handleError = (error: any, context: string) => {
@@ -211,6 +213,14 @@ const AddExercisePage: React.FC = () => {
     navigate(`/exercises/edit/${exerciseId}`);
   };
 
+  // Fonction pour filtrer les exercices par groupe musculaire
+  const filteredExercises = exercises.filter((exercise) => {
+    if (selectedMuscleGroupFilter === 0) {
+      return true; // Afficher tous les exercices si aucun filtre n'est sélectionné
+    }
+    return exercise.muscleGroupId === selectedMuscleGroupFilter;
+  });
+
   // Composant pour afficher les messages
   const MessageDisplay: React.FC<{ error: ErrorState }> = ({ error }) => (
     <div className={`message ${error.type}`}>
@@ -363,8 +373,47 @@ const AddExercisePage: React.FC = () => {
             </form>
           )}
 
+          <div className="exercises-filter">
+            <div className="filter-container">
+              <label htmlFor="muscleGroupFilter">
+                Filtrer par groupe musculaire :
+              </label>
+              <select
+                id="muscleGroupFilter"
+                value={selectedMuscleGroupFilter}
+                onChange={(e) =>
+                  setSelectedMuscleGroupFilter(Number(e.target.value))
+                }
+                className="filter-select"
+              >
+                <option value={0}>Tous les groupes musculaires</option>
+                {muscleGroups.map((group) => (
+                  <option key={group.id} value={group.id}>
+                    {group.label}
+                  </option>
+                ))}
+              </select>
+              {selectedMuscleGroupFilter !== 0 && (
+                <button
+                  onClick={() => setSelectedMuscleGroupFilter(0)}
+                  className="clear-filter-btn"
+                  title="Effacer le filtre"
+                >
+                  <i className="fas fa-times"></i>
+                </button>
+              )}
+            </div>
+            <div className="filter-info">
+              <span className="exercise-count">
+                {filteredExercises.length} exercice
+                {filteredExercises.length !== 1 ? "s" : ""} trouvé
+                {filteredExercises.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+          </div>
+
           <div className="exercises-grid">
-            {exercises.map((ex) => (
+            {filteredExercises.map((ex) => (
               <div
                 key={ex.id}
                 className="exercise-card"

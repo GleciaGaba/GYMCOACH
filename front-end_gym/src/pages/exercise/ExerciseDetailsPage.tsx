@@ -9,11 +9,14 @@ const ExerciseDetailsPage: React.FC = () => {
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     const fetchExercise = async () => {
       try {
-        if (!id) return;
+        if (!id) {
+          return;
+        }
         const data = await exerciseApi.getExerciseById(parseInt(id));
         setExercise(data);
       } catch (err) {
@@ -26,6 +29,37 @@ const ExerciseDetailsPage: React.FC = () => {
 
     fetchExercise();
   }, [id]);
+
+  const handleEdit = () => {
+    if (id) {
+      navigate(`/exercises/edit/${id}`);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!id || !exercise) return;
+
+    const confirmed = window.confirm(
+      `Êtes-vous sûr de vouloir supprimer l'exercice "${exercise.name}" ? Cette action est irréversible.`
+    );
+
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+    try {
+      await exerciseApi.deleteExercise(parseInt(id));
+      // Redirige vers la liste des exercices après suppression
+      navigate("/exercises");
+    } catch (err) {
+      setError("Erreur lors de la suppression de l'exercice");
+      console.error(err);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Fonction pour nettoyer les valeurs null
+  const cleanValue = (value: any) => value || "";
 
   if (loading) {
     return (
@@ -59,10 +93,35 @@ const ExerciseDetailsPage: React.FC = () => {
 
       <div className="exercise-details">
         <div className="exercise-header">
-          <h1>{exercise.name}</h1>
+          <div className="exercise-title-actions">
+            <h1>{cleanValue(exercise.name)}</h1>
+            <div className="exercise-actions">
+              <button
+                onClick={handleEdit}
+                className="action-button edit"
+                title="Modifier l'exercice"
+              >
+                <i className="fas fa-edit"></i>
+                Modifier
+              </button>
+              <button
+                onClick={handleDelete}
+                className="action-button delete"
+                title="Supprimer l'exercice"
+                disabled={isDeleting}
+              >
+                <i className="fas fa-trash"></i>
+                {isDeleting ? "Suppression..." : "Supprimer"}
+              </button>
+            </div>
+          </div>
           <div className="exercise-tags">
-            <span className="tag-muscle">{exercise.muscleGroupLabel}</span>
-            <span className="tag-difficulty">{exercise.difficulty}</span>
+            <span className="tag-muscle">
+              {cleanValue(exercise.muscleGroupLabel)}
+            </span>
+            <span className="tag-difficulty">
+              {cleanValue(exercise.difficulty)}
+            </span>
           </div>
         </div>
 
@@ -70,7 +129,7 @@ const ExerciseDetailsPage: React.FC = () => {
           <div className="exercise-media">
             <img
               src={exercise.exerciseUrl}
-              alt={exercise.name}
+              alt={cleanValue(exercise.name)}
               className="exercise-image"
             />
           </div>
@@ -79,27 +138,29 @@ const ExerciseDetailsPage: React.FC = () => {
         <div className="exercise-info">
           <section className="info-section">
             <h2>Description</h2>
-            <p>{exercise.description}</p>
+            <p>{cleanValue(exercise.description)}</p>
           </section>
 
           <section className="info-section">
             <h2>Sous-groupe musculaire</h2>
-            <p>{exercise.muscleSubgroup || "Non spécifié"}</p>
+            <p>{cleanValue(exercise.muscleSubgroup) || "Non spécifié"}</p>
           </section>
 
           <section className="info-section">
             <h2>Équipement</h2>
-            <p>{exercise.equipment || "Aucun équipement requis"}</p>
+            <p>{cleanValue(exercise.equipment) || "Aucun équipement requis"}</p>
           </section>
 
           <section className="info-section">
             <h2>Instructions</h2>
             <div className="instructions">
-              {exercise.instructions.split("\n").map((instruction, index) => (
-                <p key={index} className="instruction-step">
-                  {index + 1}. {instruction}
-                </p>
-              ))}
+              {cleanValue(exercise.instructions)
+                .split("\n")
+                .map((instruction: string, index: number) => (
+                  <p key={index} className="instruction-step">
+                    {index + 1}. {instruction}
+                  </p>
+                ))}
             </div>
           </section>
         </div>

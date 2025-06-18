@@ -104,8 +104,69 @@ export const exerciseApi = {
     }
   },
 
-  deleteExercise: async (id: number): Promise<void> => {
-    await API.delete(`/exercises/${id}`);
+  async getExerciseById(id: number): Promise<Exercise> {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("No authentication token found");
+    }
+    try {
+      const res = await axios.get<Exercise>(`${EXERCISE_API_BASE}/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      return res.data;
+    } catch (error: any) {
+      console.error(
+        "Erreur lors de la récupération de l'exercice:",
+        error.response?.data || error.message
+      );
+      throw error;
+    }
+  },
+
+  async updateExercise(id: number, dto: CreateExerciseDto): Promise<Exercise> {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("No authentication token found");
+    }
+    try {
+      const res = await axios.put<Exercise>(`${EXERCISE_API_BASE}/${id}`, dto, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      return res.data;
+    } catch (error: any) {
+      console.error(
+        "Erreur lors de la mise à jour de l'exercice:",
+        error.response?.data || error.message
+      );
+      throw error;
+    }
+  },
+
+  async deleteExercise(id: number): Promise<void> {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("No authentication token found");
+    }
+    try {
+      await axios.delete(`${EXERCISE_API_BASE}/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+    } catch (error: any) {
+      console.error(
+        "Erreur lors de la suppression de l'exercice:",
+        error.response?.data || error.message
+      );
+      throw error;
+    }
   },
 
   // (autres méthodes : updateExercise, deleteExercise, etc.)

@@ -163,6 +163,28 @@ public class ExerciseServiceImpl implements ExerciseService {
         }
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public ExerciseDTO getExerciseById(Integer id, String coachEmail) {
+        User coach = userRepository.findByEmail(coachEmail)
+            .orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.NOT_FOUND, "Coach not found")
+            );
+
+        Exercise exercise = exerciseRepository.findById(id)
+            .orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.NOT_FOUND, "Exercise not found")
+            );
+
+        if (!exercise.getCoach().getId().equals(coach.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                "You are not authorized to access this exercise"
+            );
+        }
+
+        return convertToDTO(exercise);
+    }
+
     /** Mapping entité → DTO pour l'API REST */
     ExerciseDTO convertToDTO(Exercise ex) {
         return ExerciseDTO.builder()

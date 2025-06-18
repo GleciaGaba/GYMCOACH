@@ -8,7 +8,6 @@ import com.gymcoach.backend_gym.model.User;
 import com.gymcoach.backend_gym.repository.ExerciseRepository;
 import com.gymcoach.backend_gym.repository.MuscleGroupRepository;
 import com.gymcoach.backend_gym.repository.UserRepository;
-import com.gymcoach.backend_gym.service.impl.ExerciseServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

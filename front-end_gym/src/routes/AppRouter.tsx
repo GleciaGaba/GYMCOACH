@@ -7,11 +7,11 @@ import DashboardSportif from "../pages/dashboard/DashboardSportif";
 //import DashboardAdmin from "../pages/dashboard/DashboardAdmin";
 import AddSportifPage from "../pages/sportif/AddSportifPage";
 import AddExercisePage from "../pages/exercise/AddExercisePage";
+import EditExercisePage from "../pages/exercise/EditExercisePage";
 import { useAuth } from "../contexts/AuthContext";
 import ResendConfirmation from "../components/resend_confirmation/ResendConfirmation";
 import CreateWorkoutPage from "../pages/workout/CreateWorkoutPage";
 import ExerciseDetailsPage from "../pages/exercise/ExerciseDetailsPage";
-import PrivateRoute from "../components/PrivateRoute";
 
 export default function AppRouter() {
   const { user } = useAuth();
@@ -81,6 +81,16 @@ export default function AppRouter() {
       <Route path="/resend-confirmation" element={<ResendConfirmation />} />
       <Route path="/exercises" element={<AddExercisePage />} />
       <Route path="/exercises/:id" element={<ExerciseDetailsPage />} />
+      <Route
+        path="/exercises/edit/:id"
+        element={
+          user?.role === "COACH" ? (
+            <EditExercisePage />
+          ) : (
+            <Navigate to="/login" />
+          )
+        }
+      />
       <Route
         path="/*"
         element={

@@ -2,6 +2,7 @@ package com.gymcoach.backend_gym.controller;
 
 import com.gymcoach.backend_gym.dto.MuscleGroupDTO;
 import com.gymcoach.backend_gym.service.MuscleGroupService;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -33,9 +34,12 @@ public class MuscleGroupController {
      * - Permettre aux utilisateurs de filtrer les exercices par groupe musculaire
      * - Aider les coaches à catégoriser leurs exercices
      * 
+     * Cache activé pour réduire les appels répétés depuis le frontend.
+     * 
      * @return ResponseEntity<List<MuscleGroupDTO>> Liste des groupes musculaires avec leurs détails
      */
     @GetMapping
+    @Cacheable("muscleGroups")
     public ResponseEntity<List<MuscleGroupDTO>> getAllMuscleGroups() {
         return ResponseEntity.ok(muscleGroupService.getAllMuscleGroups());
     }

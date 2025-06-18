@@ -121,6 +121,24 @@ public class ExerciseController {
         exerciseService.deleteExercise(id, auth.getName());
     }
 
+    /**
+     * GET /api/v1/exercises/{id}
+     * 
+     * Récupère un exercice spécifique par son ID, si le coach connecté en est le propriétaire.
+     * 
+     * @param id   ID de l'exercice à récupérer
+     * @param auth l'objet d'authentification
+     * @return 200 OK + DTO de l'exercice ou 404 Not Found si non trouvé
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<ExerciseDTO> getById(
+            @PathVariable Integer id,
+            Authentication auth
+    ) {
+        ExerciseDTO exercise = exerciseService.getExerciseById(id, auth.getName());
+        return ResponseEntity.ok(exercise);
+    }
+
     @GetMapping("/coach")
     public ResponseEntity<Page<ExerciseDTO>> getExercisesByCoach(
         Authentication auth,

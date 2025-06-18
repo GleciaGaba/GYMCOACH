@@ -44,7 +44,7 @@ public interface ExerciseService {
     /**
      * Crée un nouvel exercice lié au coach.
      * @param request    données de création validées (@Valid)
-     * @param coachEmail email du coach (déduit de l’authentification)
+     * @param coachEmail email du coach (déduit de l'authentification)
      * @return DTO de l'exercice créé
      */
     ExerciseDTO createExercise(ExerciseRequest request, String coachEmail);
@@ -66,4 +66,12 @@ public interface ExerciseService {
      * @param coachEmail email du coach (droits de suppression)
      */
     void deleteExercise(Integer id, String coachEmail);
+
+    /**
+     * Récupère un exercice spécifique par son ID, si le coach y a droit.
+     * @param id         ID de l'exercice à récupérer
+     * @param coachEmail email du coach (droits d'accès)
+     * @return DTO de l'exercice ou exception si non trouvé/non autorisé
+     */
+    ExerciseDTO getExerciseById(Integer id, String coachEmail);
 }
