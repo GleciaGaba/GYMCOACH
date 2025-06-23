@@ -1,0 +1,149 @@
+/* src/components/chat/ChatNotification.css */
+.chat-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 350px;
+  max-width: 90vw;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e0e0e0;
+  z-index: 10000;
+  transform: translateX(400px);
+  transition: transform 0.3s ease;
+  cursor: pointer;
+}
+
+.chat-notification.visible {
+  transform: translateX(0);
+}
+
+.chat-notification.hidden {
+  transform: translateX(400px);
+}
+
+.notification-content {
+  padding: 1rem;
+}
+
+.notification-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.notification-icon {
+  color: #007bff;
+  font-size: 1rem;
+}
+
+.notification-title {
+  font-weight: 600;
+  color: #333;
+  font-size: 0.9rem;
+  flex: 1;
+}
+
+.notification-close {
+  background: none;
+  border: none;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.notification-close:hover {
+  background-color: #f8f9fa;
+  color: #495057;
+}
+
+.notification-body {
+  margin-bottom: 0.75rem;
+}
+
+.notification-sender {
+  font-weight: 600;
+  color: #333;
+  font-size: 0.95rem;
+  margin-bottom: 0.25rem;
+}
+
+.notification-message {
+  color: #6c757d;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.notification-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.notification-time {
+  font-weight: 500;
+}
+
+.notification-action {
+  color: #007bff;
+  font-weight: 500;
+}
+
+/* Animation d'entrée */
+@keyframes slideIn {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .chat-notification {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    width: auto;
+    max-width: none;
+  }
+
+  .notification-content {
+    padding: 0.75rem;
+  }
+
+  .notification-title {
+    font-size: 0.85rem;
+  }
+
+  .notification-sender {
+    font-size: 0.9rem;
+  }
+
+  .notification-message {
+    font-size: 0.8rem;
+  }
+}

@@ -7,7 +7,13 @@
 
 import React, { useEffect, useState } from "react";
 import { Container, Row, Col, Card, Button, Spinner } from "react-bootstrap";
-import { FaUsers, FaChartLine, FaCalendarAlt, FaBell } from "react-icons/fa";
+import {
+  FaUsers,
+  FaChartLine,
+  FaCalendarAlt,
+  FaBell,
+  FaComments,
+} from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./DashboardCoach.css";
@@ -255,10 +261,19 @@ const DashboardCoach: React.FC = () => {
                 {/* Bouton pour ajouter un exercice */}
                 <Button
                   variant="outline-primary"
-                  className="w-100"
+                  className="w-100 mb-2"
                   onClick={() => navigate("/add-exercise")}
                 >
                   Ajouter un exercice
+                </Button>
+                {/* Bouton pour accéder au chat */}
+                <Button
+                  variant="outline-success"
+                  className="w-100"
+                  onClick={() => navigate("/chat")}
+                >
+                  <FaComments className="me-2" />
+                  Chat avec les sportifs
                 </Button>
               </Card.Body>
             </Card>

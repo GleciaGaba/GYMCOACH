@@ -1,0 +1,74 @@
+/* src/components/chat/ChatSearch.css */
+.chat-search {
+  padding: 1rem;
+  border-bottom: 1px solid #e0e0e0;
+  background-color: #fff;
+}
+
+.search-input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 0.75rem;
+  color: #6c757d;
+  font-size: 0.9rem;
+  z-index: 1;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.75rem 2.5rem 0.75rem 2.5rem;
+  border: 1px solid #ced4da;
+  border-radius: 1.5rem;
+  font-size: 0.9rem;
+  background-color: #f8f9fa;
+  transition: all 0.2s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #007bff;
+  background-color: #fff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.clear-search-btn {
+  position: absolute;
+  right: 0.5rem;
+  background: none;
+  border: none;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.clear-search-btn:hover {
+  background-color: #e9ecef;
+  color: #495057;
+}
+
+.clear-search-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .chat-search {
+    padding: 0.75rem;
+  }
+
+  .search-input {
+    padding: 0.6rem 2.25rem 0.6rem 2.25rem;
+    font-size: 0.85rem;
+  }
+}

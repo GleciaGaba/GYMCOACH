@@ -33,12 +33,21 @@ export const confirmSportifAccount = (token: string) =>
 export const changeTemporaryPassword = (token: string, newPassword: string) =>
   API.post("/api/users/change-temporary-password", { token, newPassword });
 
-export const getSportifs = () =>
-  API.get("/api/users?role=SPORTIF", {
+export const getSportifs = async () => {
+  const response = await API.get("/api/coaches/my-athletes", {
     headers: {
       Authorization: `Bearer ${localStorage.getItem("token")}`,
     },
   });
+  // Adapter le mapping pour le chat
+  return (response.data || []).map((athlete: any) => ({
+    id: athlete.id,
+    firstName: athlete.firstName,
+    lastName: athlete.lastName,
+    email: athlete.email,
+    is_active: athlete.active === true, // mapping correct pour le chat
+  }));
+};
 
 export const getSportif = (id: number) =>
   API.get(`/api/users/${id}`, {

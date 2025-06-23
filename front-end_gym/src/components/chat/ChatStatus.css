@@ -1,0 +1,103 @@
+/* src/components/chat/ChatStatus.css */
+.chat-status {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 2rem;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  font-size: 0.85rem;
+  z-index: 1000;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  min-width: 140px;
+}
+
+.chat-status.connected {
+  background-color: rgba(40, 167, 69, 0.9);
+}
+
+.chat-status.disconnected {
+  background-color: rgba(220, 53, 69, 0.9);
+}
+
+.status-icon {
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.status-icon.connected {
+  color: #fff;
+  animation: pulse 2s infinite;
+}
+
+.status-icon.warning {
+  color: #ffc107;
+  animation: pulse 1s infinite;
+}
+
+.status-icon.disconnected {
+  color: #ff6b6b;
+}
+
+.status-text {
+  font-weight: 500;
+}
+
+.error-tooltip {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  background-color: rgba(220, 53, 69, 0.95);
+  color: white;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  margin-bottom: 0.5rem;
+  max-width: 250px;
+  word-wrap: break-word;
+  font-size: 0.8rem;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.3s ease;
+  pointer-events: none;
+}
+
+.chat-status:hover .error-tooltip {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .chat-status {
+    bottom: 10px;
+    right: 10px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+    min-width: 120px;
+  }
+
+  .error-tooltip {
+    max-width: 200px;
+    font-size: 0.75rem;
+  }
+}

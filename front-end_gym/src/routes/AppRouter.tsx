@@ -12,6 +12,7 @@ import { useAuth } from "../contexts/AuthContext";
 import ResendConfirmation from "../components/resend_confirmation/ResendConfirmation";
 import CreateWorkoutPage from "../pages/workout/CreateWorkoutPage";
 import ExerciseDetailsPage from "../pages/exercise/ExerciseDetailsPage";
+import ChatPage from "../pages/chat/ChatPage";
 
 export default function AppRouter() {
   const { user } = useAuth();
@@ -71,6 +72,10 @@ export default function AppRouter() {
             <Navigate to="/login" />
           )
         }
+      />
+      <Route
+        path="/chat"
+        element={user ? <ChatPage /> : <Navigate to="/login" />}
       />
       {/*<Route
         path="/dashboard_admin"

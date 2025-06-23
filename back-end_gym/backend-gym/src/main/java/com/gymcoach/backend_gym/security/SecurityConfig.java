@@ -61,11 +61,19 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration cfg = new CorsConfiguration();
-        cfg.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:3000"));
-        cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        cfg.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "Accept"));
+        cfg.setAllowedOrigins(List.of(
+            "http://localhost:5173", 
+            "http://localhost:5174",
+            "http://localhost:5175",
+            "http://localhost:5176",
+            "http://localhost:5177",
+            "http://localhost:3000",
+            "http://localhost:8080"
+        ));
+        cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "TRACE", "CONNECT"));
+        cfg.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "Accept", "*"));
         cfg.setExposedHeaders(List.of("Authorization"));
-        cfg.setAllowCredentials(false);
+        cfg.setAllowCredentials(true);
         cfg.setMaxAge(3600L);
         
         UrlBasedCorsConfigurationSource src = new UrlBasedCorsConfigurationSource();

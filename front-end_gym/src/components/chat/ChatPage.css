@@ -1,0 +1,161 @@
+/* src/components/chat/ChatPage.css */
+.chat-page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f8f9fa;
+  position: relative;
+}
+
+/* Notification de mode hors ligne */
+.offline-notification {
+  position: sticky;
+  top: 0;
+  z-index: 1001;
+  margin-bottom: 0;
+}
+
+.offline-notification .alert {
+  margin: 0;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+}
+
+.chat-container {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.chat-sidebar {
+  width: 350px;
+  min-width: 300px;
+  background-color: #fff;
+  border-right: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: #fff;
+}
+
+/* Indicateur de statut WebSocket */
+.websocket-status {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 2rem;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  font-size: 0.85rem;
+  z-index: 1000;
+  transition: all 0.3s ease;
+}
+
+.websocket-status.connected {
+  background-color: rgba(40, 167, 69, 0.9);
+}
+
+.websocket-status.disconnected {
+  background-color: rgba(220, 53, 69, 0.9);
+}
+
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.websocket-status.connected .status-indicator {
+  background-color: #fff;
+}
+
+.websocket-status.disconnected .status-indicator {
+  background-color: #ff6b6b;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .chat-container {
+    flex-direction: column;
+  }
+
+  .chat-sidebar {
+    width: 100%;
+    min-width: unset;
+    height: 40vh;
+    border-right: none;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  .chat-main {
+    height: 60vh;
+  }
+
+  .websocket-status {
+    bottom: 10px;
+    right: 10px;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .chat-sidebar {
+    height: 35vh;
+  }
+
+  .chat-main {
+    height: 65vh;
+  }
+}
+
+/* Animations */
+.chat-sidebar,
+.chat-main {
+  transition: all 0.3s ease;
+}
+
+/* Scrollbar personnalisée pour le conteneur principal */
+.chat-page::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chat-page::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.chat-page::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.chat-page::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
