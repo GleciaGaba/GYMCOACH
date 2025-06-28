@@ -41,6 +41,7 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
+  isLoading: boolean;
   login: (email: string, password: string) => Promise<string>;
   signup: (
     firstName: string,
@@ -55,6 +56,7 @@ const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -70,6 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem("user", JSON.stringify(user));
       }
     }
+    setIsLoading(false);
   }, []);
 
   async function login(email: string, password: string): Promise<string> {
@@ -91,6 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Décoder le token pour obtenir l'ID de l'utilisateur
       const decodedToken = decodeJwt(token);
+      console.log("Token décodé:", decodedToken);
       if (!decodedToken || !decodedToken.sub) {
         throw new Error("Token invalide");
       }
@@ -150,7 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, signup, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Conversation, getConversations } from "../../api/chat";
-import { getSportifs } from "../../api/sportif";
+import { getSportifs, getMyCoach } from "../../api/sportif";
+import { useAuth } from "../../contexts/AuthContext";
 import ChatSearch from "./ChatSearch";
 import "./ChatList.css";
 
@@ -12,85 +13,176 @@ interface Sportif {
   is_active: boolean;
 }
 
+interface Coach {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
 interface ChatListProps {
   onConversationSelect: (conversation: Conversation) => void;
   selectedConversationId?: number;
   onOfflineModeChange?: (offline: boolean) => void;
+  refreshTrigger?: number;
 }
 
 const ChatList: React.FC<ChatListProps> = ({
   onConversationSelect,
   selectedConversationId,
   onOfflineModeChange,
+  refreshTrigger,
 }) => {
+  const { user } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [sportifs, setSportifs] = useState<Sportif[]>([]);
+  const [coach, setCoach] = useState<Coach | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
+  const isCoach = user?.role === "COACH";
+  const isSportif = user?.role === "SPORTIF";
+
   useEffect(() => {
+    console.log(
+      "DEBUG - ChatList useEffect triggered, refreshTrigger:",
+      refreshTrigger
+    );
     loadAll();
-  }, []);
+  }, [refreshTrigger]);
 
   const loadAll = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // Charger les sportifs et les conversations séparément
+      // Charger les conversations
       let convRes: Conversation[] = [];
-      let sportifsRes: any = [];
-
       try {
         convRes = await getConversations();
       } catch (convErr: any) {
         console.warn("Erreur lors du chargement des conversations:", convErr);
-        // On continue avec une liste vide de conversations
-      }
-
-      try {
-        sportifsRes = await getSportifs();
-      } catch (sportifsErr: any) {
-        console.error("Erreur lors du chargement des sportifs:", sportifsErr);
-        throw sportifsErr; // On arrête si on ne peut pas charger les sportifs
       }
 
       setConversations(convRes);
-      setSportifs(sportifsRes);
+
+      // Charger les données selon le rôle
+      if (isCoach) {
+        // Pour les coaches : charger les sportifs
+        try {
+          const sportifsRes = await getSportifs();
+          setSportifs(sportifsRes);
+        } catch (sportifsErr: any) {
+          console.error("Erreur lors du chargement des sportifs:", sportifsErr);
+          throw sportifsErr;
+        }
+      } else if (isSportif) {
+        // Pour les sportifs : charger leur coach
+        try {
+          const coachData = await getMyCoach();
+          setCoach(coachData);
+        } catch (coachErr: any) {
+          console.error("Erreur lors du chargement du coach:", coachErr);
+          throw coachErr;
+        }
+      }
+
       onOfflineModeChange?.(false);
     } catch (err: any) {
-      console.error("Erreur lors du chargement des sportifs:", err);
-      setError("Erreur lors du chargement des sportifs");
+      console.error("Erreur lors du chargement:", err);
+      setError(
+        isCoach
+          ? "Erreur lors du chargement des sportifs"
+          : "Erreur lors du chargement du coach"
+      );
       onOfflineModeChange?.(true);
     } finally {
       setLoading(false);
     }
   };
 
-  // Fusionne sportifs et conversations pour l'affichage
-  const sportifsAffiches = useMemo(() => {
-    return sportifs
-      .filter((s) => s.is_active)
-      .map((sportif) => {
-        const conversation = conversations.find(
-          (c) => c.otherUserId === sportif.id
+  // Fusionne les données selon le rôle
+  const contactsAffiches = useMemo(() => {
+    console.log("DEBUG - Conversations:", conversations);
+    console.log("DEBUG - Sportifs:", sportifs);
+    console.log("DEBUG - Coach:", coach);
+
+    if (isCoach) {
+      // Pour les coaches : afficher les sportifs
+      return sportifs
+        .filter((s) => s.is_active)
+        .map((sportif) => {
+          // Essayer de trouver une conversation par ID exact
+          let conversation = conversations.find(
+            (c) => c.otherUserId === sportif.id
+          );
+
+          // Si pas trouvé, essayer par nom (fallback)
+          if (!conversation) {
+            conversation = conversations.find(
+              (c) =>
+                c.otherUserName &&
+                (c.otherUserName
+                  .toLowerCase()
+                  .includes(sportif.firstName.toLowerCase()) ||
+                  c.otherUserName
+                    .toLowerCase()
+                    .includes(sportif.lastName.toLowerCase()))
+            );
+          }
+
+          console.log(
+            `DEBUG - Sportif ${sportif.id} (${sportif.firstName} ${sportif.lastName}) - Conversation trouvée:`,
+            conversation
+          );
+          return {
+            ...sportif,
+            conversation,
+            type: "sportif" as const,
+          };
+        })
+        .filter((s) => {
+          if (!searchQuery.trim()) return true;
+          const query = searchQuery.toLowerCase();
+          return (
+            (s.firstName + " " + s.lastName).toLowerCase().includes(query) ||
+            (s.conversation &&
+              s.conversation.lastMessage.toLowerCase().includes(query))
+          );
+        });
+    } else if (isSportif && coach) {
+      // Pour les sportifs : afficher leur coach
+      let conversation = conversations.find((c) => c.otherUserId === coach.id);
+
+      // Si pas trouvé, essayer par nom (fallback)
+      if (!conversation) {
+        conversation = conversations.find(
+          (c) =>
+            c.otherUserName &&
+            (c.otherUserName
+              .toLowerCase()
+              .includes(coach.firstName.toLowerCase()) ||
+              c.otherUserName
+                .toLowerCase()
+                .includes(coach.lastName.toLowerCase()))
         );
-        return {
-          ...sportif,
+      }
+
+      console.log(
+        `DEBUG - Coach ${coach.id} (${coach.firstName} ${coach.lastName}) - Conversation trouvée:`,
+        conversation
+      );
+      return [
+        {
+          ...coach,
           conversation,
-        };
-      })
-      .filter((s) => {
-        if (!searchQuery.trim()) return true;
-        const query = searchQuery.toLowerCase();
-        return (
-          (s.firstName + " " + s.lastName).toLowerCase().includes(query) ||
-          (s.conversation &&
-            s.conversation.lastMessage.toLowerCase().includes(query))
-        );
-      });
-  }, [sportifs, conversations, searchQuery]);
+          type: "coach" as const,
+        },
+      ];
+    }
+    return [];
+  }, [sportifs, coach, conversations, searchQuery, isCoach, isSportif]);
 
   const formatTimestamp = (timestamp: string) => {
     if (!timestamp) return "";
@@ -122,15 +214,15 @@ const ChatList: React.FC<ChatListProps> = ({
     setSearchQuery(query);
   };
 
-  const handleSportifClick = (sportif: any) => {
-    if (sportif.conversation) {
-      onConversationSelect(sportif.conversation);
+  const handleContactClick = (contact: any) => {
+    if (contact.conversation) {
+      onConversationSelect(contact.conversation);
     } else {
       // Crée une conversation factice pour l'affichage (id: -1)
       const newConv: Conversation = {
         id: -1, // temporaire, sera remplacé à l'envoi du premier message
-        otherUserId: sportif.id,
-        otherUserName: `${sportif.firstName} ${sportif.lastName}`,
+        otherUserId: contact.id,
+        otherUserName: `${contact.firstName} ${contact.lastName}`,
         lastMessage: "",
         lastMessageTimestamp: "",
         unreadCount: 0,
@@ -139,11 +231,17 @@ const ChatList: React.FC<ChatListProps> = ({
     }
   };
 
+  const getHeaderTitle = () => {
+    if (isCoach) return "Sportifs actifs";
+    if (isSportif) return "Mon coach";
+    return "Contacts";
+  };
+
   if (loading) {
     return (
       <div className="chat-list">
         <div className="chat-list-header">
-          <h3>Sportifs actifs</h3>
+          <h3>{getHeaderTitle()}</h3>
         </div>
         <ChatSearch onSearch={handleSearch} />
         <div className="chat-list-loading">
@@ -159,7 +257,7 @@ const ChatList: React.FC<ChatListProps> = ({
     return (
       <div className="chat-list">
         <div className="chat-list-header">
-          <h3>Sportifs actifs</h3>
+          <h3>{getHeaderTitle()}</h3>
         </div>
         <ChatSearch onSearch={handleSearch} />
         <div className="chat-list-error">
@@ -175,17 +273,21 @@ const ChatList: React.FC<ChatListProps> = ({
   return (
     <div className="chat-list">
       <div className="chat-list-header">
-        <h3>Sportifs actifs</h3>
+        <h3>{getHeaderTitle()}</h3>
         <button className="btn btn-outline-primary btn-sm" onClick={loadAll}>
           <i className="bi bi-arrow-clockwise"></i>
         </button>
       </div>
       <ChatSearch onSearch={handleSearch} />
       <div className="chat-list-content">
-        {sportifsAffiches.length === 0 ? (
+        {contactsAffiches.length === 0 ? (
           <div className="chat-list-empty">
             <p>
-              {searchQuery ? "Aucun sportif trouvé" : "Aucun sportif actif"}
+              {searchQuery
+                ? "Aucun contact trouvé"
+                : isCoach
+                ? "Aucun sportif actif"
+                : "Aucun coach assigné"}
             </p>
             {searchQuery && (
               <button
@@ -197,58 +299,58 @@ const ChatList: React.FC<ChatListProps> = ({
             )}
           </div>
         ) : (
-          sportifsAffiches.map((sportif) => (
+          contactsAffiches.map((contact) => (
             <div
-              key={sportif.id}
+              key={contact.id}
               className={`chat-list-item ${
-                sportif.conversation
+                contact.conversation
                   ? "active-conversation"
                   : "inactive-conversation"
               } ${
                 selectedConversationId ===
-                (sportif.conversation ? sportif.conversation.id : -1)
+                (contact.conversation ? contact.conversation.id : -1)
                   ? "active"
                   : ""
               }`}
-              onClick={() => handleSportifClick(sportif)}
+              onClick={() => handleContactClick(contact)}
               style={{
-                background: sportif.conversation ? "#e6ffe6" : "#e6f0ff",
+                background: contact.conversation ? "#e6ffe6" : "#e6f0ff",
                 cursor: "pointer",
               }}
             >
               <div className="chat-list-item-avatar">
                 <div className="avatar-placeholder">
-                  {sportif.firstName.charAt(0).toUpperCase()}
+                  {contact.firstName.charAt(0).toUpperCase()}
                 </div>
-                {sportif.conversation &&
-                  sportif.conversation.unreadCount > 0 && (
+                {contact.conversation &&
+                  contact.conversation.unreadCount > 0 && (
                     <span className="unread-badge">
-                      {sportif.conversation.unreadCount}
+                      {contact.conversation.unreadCount}
                     </span>
                   )}
               </div>
               <div className="chat-list-item-content">
                 <div className="chat-list-item-header">
                   <h6 className="chat-list-item-name">
-                    {sportif.firstName} {sportif.lastName}
+                    {contact.firstName} {contact.lastName}
                   </h6>
                   <span className="chat-list-item-time">
-                    {sportif.conversation
+                    {contact.conversation
                       ? formatTimestamp(
-                          sportif.conversation.lastMessageTimestamp
+                          contact.conversation.lastMessageTimestamp
                         )
                       : ""}
                   </span>
                 </div>
                 <div className="chat-list-item-message">
-                  {sportif.conversation ? (
+                  {contact.conversation ? (
                     <p
                       className={
-                        sportif.conversation.unreadCount > 0 ? "unread" : ""
+                        contact.conversation.unreadCount > 0 ? "unread" : ""
                       }
                     >
-                      {truncateMessage(sportif.conversation.lastMessage)}
-                      {sportif.conversation.unreadCount > 0 ? (
+                      {truncateMessage(contact.conversation.lastMessage)}
+                      {contact.conversation.unreadCount > 0 ? (
                         <span style={{ color: "red", marginLeft: 8 }}>
                           • Non lu
                         </span>
@@ -259,7 +361,11 @@ const ChatList: React.FC<ChatListProps> = ({
                       )}
                     </p>
                   ) : (
-                    <p style={{ color: "#007bff" }}>Aucune conversation</p>
+                    <p style={{ color: "#007bff", fontStyle: "italic" }}>
+                      {isCoach
+                        ? "Cliquez pour démarrer une conversation"
+                        : "Cliquez pour démarrer une conversation avec votre coach"}
+                    </p>
                   )}
                 </div>
               </div>

@@ -14,12 +14,22 @@ public class AuthResponse {
     private String role;
     private String firstName;
     private String lastName;
+    private Long userId;
 
     public AuthResponse(String token, String email, String message, String role) {
         this.token = token;
         this.email = email;
         this.message = message;
         this.role = role;
+    }
+
+    public AuthResponse(String token, String email, String message, String role, String firstName, String lastName) {
+        this.token = token;
+        this.email = email;
+        this.message = message;
+        this.role = role;
+        this.firstName = firstName;
+        this.lastName = lastName;
     }
 }
 

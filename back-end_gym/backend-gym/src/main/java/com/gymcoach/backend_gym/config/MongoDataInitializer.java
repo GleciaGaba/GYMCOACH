@@ -4,39 +4,44 @@ import com.gymcoach.backend_gym.model.Chat;
 import com.gymcoach.backend_gym.model.Message;
 import com.gymcoach.backend_gym.repository.ChatRepository;
 import com.gymcoach.backend_gym.repository.MessageRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.core.annotation.Order;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 
-@Configuration
-public class MongoDataInitializer {
+@Component
+@RequiredArgsConstructor
+@Slf4j
+public class MongoDataInitializer implements CommandLineRunner {
 
-    @Autowired
-    private ChatRepository chatRepository;
+    private final MongoTemplate mongoTemplate;
+    private final ChatRepository chatRepository;
+    private final MessageRepository messageRepository;
 
-    @Autowired
-    private MessageRepository messageRepository;
-
-    @Bean
-    @Order(2) // S'exécute après MongoConfig
-    public CommandLineRunner initializeMongoData() {
-        return args -> {
-            System.out.println("📝 Initialisation des données MongoDB...");
-            
-            // Vérifier si des données existent déjà
-            if (chatRepository.count() == 0) {
-                createSampleData();
-                System.out.println("✅ Données de test MongoDB créées avec succès !");
-            } else {
-                System.out.println("ℹ️ Des données existent déjà dans MongoDB, pas d'initialisation nécessaire.");
-            }
-        };
+    @Override
+    public void run(String... args) throws Exception {
+        log.info("🚀 Initialisation des données MongoDB...");
+        
+        // Migrer les messages existants pour ajouter senderId et receiverId
+        migrateExistingMessages();
+        
+        // Vérifier si des données existent déjà
+        if (chatRepository.count() == 0) {
+            createSampleData();
+            log.info("✅ Données de test MongoDB créées avec succès !");
+        } else {
+            log.info("ℹ️ Des données existent déjà dans MongoDB, pas d'initialisation nécessaire.");
+        }
+        
+        log.info("✅ Initialisation MongoDB terminée");
     }
 
     private void createSampleData() {
@@ -48,7 +53,7 @@ public class MongoDataInitializer {
             createSampleMessages();
             
         } catch (Exception e) {
-            System.err.println("⚠️ Erreur lors de la création des données de test: " + e.getMessage());
+            log.error("⚠️ Erreur lors de la création des données de test: {}", e.getMessage());
         }
     }
 
@@ -71,7 +76,7 @@ public class MongoDataInitializer {
         chat3.setLastMessageAt(LocalDateTime.now().minusMinutes(30));
         chatRepository.save(chat3);
 
-        System.out.println("💬 3 conversations de test créées");
+        log.info("💬 3 conversations de test créées");
     }
 
     private void createSampleMessages() {
@@ -118,6 +123,52 @@ public class MongoDataInitializer {
             }
         }
 
-        System.out.println("💭 Messages de test créés");
+        log.info("💭 Messages de test créés");
+    }
+
+    /**
+     * Migre les messages existants pour ajouter les champs senderId et receiverId
+     * en utilisant authorId comme senderId pour la compatibilité
+     */
+    private void migrateExistingMessages() {
+        try {
+            log.info("🔄 Migration des messages existants...");
+            
+            // Trouver tous les messages qui n'ont pas de senderId
+            Query query = new Query(Criteria.where("senderId").exists(false));
+            List<Message> messagesToMigrate = mongoTemplate.find(query, Message.class);
+            
+            if (messagesToMigrate.isEmpty()) {
+                log.info("✅ Aucun message à migrer");
+                return;
+            }
+            
+            log.info("📝 Migration de {} messages...", messagesToMigrate.size());
+            
+            int migratedCount = 0;
+            for (Message message : messagesToMigrate) {
+                try {
+                    // Mettre à jour le message avec senderId = authorId
+                    Update update = new Update()
+                            .set("senderId", message.getAuthorId())
+                            .set("receiverId", null); // Sera défini plus tard si nécessaire
+                    
+                    mongoTemplate.updateFirst(
+                            new Query(Criteria.where("id").is(message.getId())),
+                            update,
+                            Message.class
+                    );
+                    
+                    migratedCount++;
+                } catch (Exception e) {
+                    log.error("❌ Erreur lors de la migration du message {}: {}", message.getId(), e.getMessage());
+                }
+            }
+            
+            log.info("✅ {} messages migrés avec succès", migratedCount);
+            
+        } catch (Exception e) {
+            log.error("❌ Erreur lors de la migration des messages: {}", e.getMessage());
+        }
     }
 } 

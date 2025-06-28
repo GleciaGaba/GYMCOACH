@@ -39,14 +39,14 @@ public class ChatServiceImpl implements ChatService {
                     .orElseThrow(() -> new RuntimeException("Expéditeur non trouvé"));
             
             // Vérifier que le destinataire existe
-            User receiver = userRepository.findById(Integer.valueOf(request.getReceiverId()))
+            userRepository.findById(Integer.valueOf(request.getReceiverId()))
                     .orElseThrow(() -> new RuntimeException("Destinataire non trouvé"));
 
             // Trouver ou créer la conversation
             Chat chat = findOrCreateConversation(senderId, request.getReceiverId());
 
-            // Créer et sauvegarder le message
-            Message message = new Message(chat.getId(), senderId, request.getContent());
+            // Créer et sauvegarder le message avec senderId et receiverId
+            Message message = new Message(chat.getId(), senderId, request.getReceiverId(), request.getContent());
             Message savedMessage = messageRepository.save(message);
 
             // Mettre à jour la conversation avec le dernier message
@@ -332,6 +332,8 @@ public class ChatServiceImpl implements ChatService {
                     .id(message.getId())
                     .chatId(message.getChatId())
                     .authorId(message.getAuthorId())
+                    .senderId(message.getSenderId())
+                    .receiverId(message.getReceiverId())
                     .content(message.getContent())
                     .isRead(message.isRead())
                     .createdAt(message.getCreatedAt())
@@ -345,6 +347,8 @@ public class ChatServiceImpl implements ChatService {
                     .id(message.getId())
                     .chatId(message.getChatId())
                     .authorId(message.getAuthorId())
+                    .senderId(message.getSenderId())
+                    .receiverId(message.getReceiverId())
                     .content(message.getContent())
                     .isRead(message.isRead())
                     .createdAt(message.getCreatedAt())

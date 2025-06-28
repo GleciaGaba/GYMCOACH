@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { Conversation } from "../../api/chat";
 import ChatList from "./ChatList";
@@ -15,6 +15,7 @@ const ChatPage: React.FC = () => {
   const [connectionAttempts, setConnectionAttempts] = useState(0);
   const [lastError, setLastError] = useState<string | null>(null);
   const [isOfflineMode, setIsOfflineMode] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Mode mock activé - WebSocket désactivé
   useEffect(() => {
@@ -70,6 +71,11 @@ const ChatPage: React.FC = () => {
     setIsOfflineMode(offline);
   };
 
+  // Fonction pour rafraîchir la liste des conversations
+  const refreshConversations = useCallback(() => {
+    setRefreshTrigger((prev) => prev + 1);
+  }, []);
+
   return (
     <div className="chat-page">
       {/* Notification de mode hors ligne */}
@@ -98,11 +104,15 @@ const ChatPage: React.FC = () => {
             onConversationSelect={handleConversationSelect}
             selectedConversationId={selectedConversation?.id}
             onOfflineModeChange={handleOfflineModeChange}
+            refreshTrigger={refreshTrigger}
           />
         </div>
 
         <div className="chat-main">
-          <ChatWindow conversation={selectedConversation} />
+          <ChatWindow
+            conversation={selectedConversation}
+            onMessageSent={refreshConversations}
+          />
         </div>
       </div>
 

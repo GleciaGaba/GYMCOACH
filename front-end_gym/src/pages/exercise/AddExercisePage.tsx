@@ -40,7 +40,7 @@ const AddExercisePage: React.FC = () => {
   const [error, setError] = useState<ErrorState | null>(null);
   const [muscleGroups, setMuscleGroups] = useState<MuscleGroup[]>([]);
   const [exercises, setExercises] = useState<Exercise[]>([]);
-  const [isFormVisible, setIsFormVisible] = useState(true);
+  const [isFormVisible, setIsFormVisible] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedMuscleGroupFilter, setSelectedMuscleGroupFilter] =

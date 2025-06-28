@@ -130,3 +130,91 @@ export const simulateNetworkDelay = (ms: number = 500): Promise<void> => {
 export const simulateNetworkError = (probability: number = 0.1): boolean => {
   return Math.random() < probability;
 };
+
+// Mock data pour les workouts
+export const mockWorkouts = [
+  {
+    id: 1,
+    name: "Programme Débutant",
+    groups: "Débutants",
+    workoutDescription:
+      "Programme d'entraînement pour débutants avec exercices de base",
+    exercises: [
+      {
+        exerciseId: 1,
+        repetitions: 10,
+        series: 3,
+        pause: 60,
+      },
+      {
+        exerciseId: 2,
+        repetitions: 12,
+        series: 3,
+        pause: 45,
+      },
+    ],
+    coachId: 1,
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString(), // 1 semaine
+    updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(), // 2 jours
+  },
+  {
+    id: 2,
+    name: "Programme Intermédiaire",
+    groups: "Intermédiaires",
+    workoutDescription:
+      "Programme d'entraînement pour sportifs de niveau intermédiaire",
+    exercises: [
+      {
+        exerciseId: 3,
+        repetitions: 15,
+        series: 4,
+        pause: 90,
+      },
+      {
+        exerciseId: 4,
+        repetitions: 8,
+        series: 4,
+        pause: 120,
+      },
+      {
+        exerciseId: 5,
+        repetitions: 20,
+        series: 3,
+        pause: 60,
+      },
+    ],
+    coachId: 1,
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 14).toISOString(), // 2 semaines
+    updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString(), // 5 jours
+  },
+  {
+    id: 3,
+    name: "Programme Avancé",
+    groups: "Avancés",
+    workoutDescription:
+      "Programme d'entraînement intensif pour sportifs confirmés",
+    exercises: [
+      {
+        exerciseId: 6,
+        repetitions: 6,
+        series: 5,
+        pause: 180,
+      },
+      {
+        exerciseId: 7,
+        repetitions: 12,
+        series: 4,
+        pause: 120,
+      },
+      {
+        exerciseId: 8,
+        repetitions: 25,
+        series: 3,
+        pause: 90,
+      },
+    ],
+    coachId: 1,
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 21).toISOString(), // 3 semaines
+    updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 1).toISOString(), // 1 jour
+  },
+];

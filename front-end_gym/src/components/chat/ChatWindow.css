@@ -96,6 +96,27 @@
   border-bottom-left-radius: 0.25rem;
 }
 
+/* Styles pour l'indicateur de l'expéditeur */
+.message-sender {
+  margin-bottom: 0.25rem;
+}
+
+.sender-name {
+  font-weight: 600;
+  font-size: 0.8rem;
+  opacity: 0.9;
+}
+
+.message.sent .sender-name {
+  color: #e3f2fd;
+  text-align: right;
+}
+
+.message.received .sender-name {
+  color: #6c757d;
+  text-align: left;
+}
+
 .message-content p {
   margin: 0 0 0.25rem 0;
   word-wrap: break-word;

@@ -249,14 +249,14 @@ const DashboardCoach: React.FC = () => {
                 <Button variant="outline-primary" className="w-100 mb-2">
                   Créer un programme
                 </Button>
-                {/* Bouton pour planifier une session */}
+                {/* Bouton pour gérer les workouts */}
                 <Button
                   variant="outline-primary"
                   className="w-100 mb-2"
                   onClick={() => navigate("/create-workout")}
                 >
-                  <i className="bi bi-plus-circle me-2"></i>
-                  Créer Workout
+                  <i className="bi bi-dumbbell me-2"></i>
+                  Gérer les Workouts
                 </Button>
                 {/* Bouton pour ajouter un exercice */}
                 <Button

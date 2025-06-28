@@ -32,7 +32,7 @@ export default function Header() {
             )}
             {user?.role === "COACH" && (
               <>
-                <Nav.Link as={Link} to="/dashboard">
+                <Nav.Link as={Link} to="/dashboard_coach">
                   Mon Espace Coach
                 </Nav.Link>
                 <Nav.Link onClick={logout}>Logout</Nav.Link>
@@ -40,7 +40,7 @@ export default function Header() {
             )}
             {user?.role === "SPORTIF" && (
               <>
-                <Nav.Link as={Link} to="/dashboard">
+                <Nav.Link as={Link} to="/dashboard_sportif">
                   Mon Espace Sportif
                 </Nav.Link>
                 <Nav.Link onClick={logout}>Logout</Nav.Link>
@@ -48,7 +48,7 @@ export default function Header() {
             )}
             {user?.role === "ADMIN" && (
               <>
-                <Nav.Link as={Link} to="/dashboard">
+                <Nav.Link as={Link} to="/dashboard_admin">
                   Admin Panel
                 </Nav.Link>
                 <Nav.Link onClick={logout}>Logout</Nav.Link>

@@ -80,3 +80,14 @@ export const changePassword = (oldPassword: string, newPassword: string) =>
       },
     }
   );
+
+// Récupérer le coach du sportif connecté
+export const getMyCoach = async () => {
+  const response = await API.get("/api/coaches/my-coaches", {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+  });
+  // Retourne le premier coach (ou le coach principal)
+  return (response.data || [])[0] || null;
+};

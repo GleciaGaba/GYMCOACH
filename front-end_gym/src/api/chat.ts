@@ -58,7 +58,47 @@ const shouldUseMock = (error: any): boolean => {
 export const getConversations = async (): Promise<Conversation[]> => {
   try {
     const response = await API.get("/api/chat/conversations");
-    return response.data;
+
+    // Adapter la structure des conversations du backend au format frontend
+    const backendConversations = response.data;
+
+    // Récupérer l'ID de l'utilisateur actuel depuis le token
+    const token = localStorage.getItem("token");
+    let currentUserId = 1; // Valeur par défaut
+
+    if (token) {
+      try {
+        // Décoder le token JWT pour récupérer l'ID utilisateur
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        currentUserId = payload.sub || 1;
+      } catch (e) {
+        console.warn(
+          "Impossible de décoder le token, utilisation de l'ID par défaut"
+        );
+      }
+    }
+
+    const adaptedConversations: Conversation[] = backendConversations.map(
+      (conv: any) => {
+        // Extraire l'ID de l'autre participant (pas l'utilisateur actuel)
+        const otherParticipant = conv.participants.find(
+          (p: any) => p.id !== currentUserId
+        );
+
+        return {
+          id: conv.id,
+          otherUserId: otherParticipant?.id || 0,
+          otherUserName:
+            otherParticipant?.firstName + " " + otherParticipant?.lastName ||
+            "Utilisateur inconnu",
+          lastMessage: conv.lastMessage || "",
+          lastMessageTimestamp: conv.lastMessageAt || conv.createdAt || "",
+          unreadCount: conv.unreadCount || 0,
+        };
+      }
+    );
+
+    return adaptedConversations;
   } catch (error: any) {
     console.warn(
       "Backend indisponible, utilisation des données mock:",

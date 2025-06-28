@@ -1,5 +1,6 @@
 package com.gymcoach.backend_gym.security;
 
+import io.jsonwebtoken.Claims;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.userdetails.User;
@@ -32,9 +33,9 @@ class JwtUtilsTest {
     @BeforeEach
     void setUp() {
         jwtUtils = new JwtUtils();
-        // Injection des valeurs de test via ReflectionTestUtils
-        ReflectionTestUtils.setField(jwtUtils, "jwtSecret", testSecret);
-        ReflectionTestUtils.setField(jwtUtils, "jwtExpirationMs", testExpiration);
+        // Configuration des propriétés de test
+        ReflectionTestUtils.setField(jwtUtils, "jwtSecret", "testSecretKey123456789012345678901234567890");
+        ReflectionTestUtils.setField(jwtUtils, "jwtExpirationMs", 3600000L); // 1 heure
     }
 
     /**
@@ -146,5 +147,137 @@ class JwtUtilsTest {
 
         // Then
         assertFalse(isValid, "Le token mal formé devrait être rejeté");
+    }
+
+    @Test
+    void testGenerateTokenWithUserId() {
+        // Test de génération du token avec le nouveau format
+        Long userId = 123L;
+        String email = "test@example.com";
+        String role = "COACH";
+        
+        String token = jwtUtils.generateToken(userId, email, role);
+        
+        assertNotNull(token);
+        assertFalse(token.isEmpty());
+        
+        // Vérifier que le token peut être parsé
+        Long extractedUserId = jwtUtils.getUserIdFromToken(token);
+        String extractedEmail = jwtUtils.getEmailFromToken(token);
+        String extractedRole = jwtUtils.getRoleFromToken(token);
+        
+        assertEquals(userId, extractedUserId);
+        assertEquals(email, extractedEmail);
+        assertEquals(role, extractedRole);
+    }
+
+    @Test
+    void testGenerateTokenWithEmail() {
+        // Test de génération du token avec l'ancien format (compatibilité)
+        String email = "test@example.com";
+        
+        String token = jwtUtils.generateToken(email);
+        
+        assertNotNull(token);
+        assertFalse(token.isEmpty());
+        
+        // Vérifier que l'email peut être extrait
+        String extractedEmail = jwtUtils.getEmailFromToken(token);
+        assertEquals(email, extractedEmail);
+        
+        // Vérifier que l'ID utilisateur n'est pas disponible (ancien format)
+        Long extractedUserId = jwtUtils.getUserIdFromToken(token);
+        assertNull(extractedUserId);
+    }
+
+    @Test
+    void testGetEmailFromToken_NewFormat() {
+        // Test d'extraction de l'email depuis le nouveau format
+        Long userId = 123L;
+        String email = "test@example.com";
+        String role = "ATHLETE";
+        
+        String token = jwtUtils.generateToken(userId, email, role);
+        String extractedEmail = jwtUtils.getEmailFromToken(token);
+        
+        assertEquals(email, extractedEmail);
+    }
+
+    @Test
+    void testGetEmailFromToken_OldFormat() {
+        // Test d'extraction de l'email depuis l'ancien format
+        String email = "test@example.com";
+        
+        String token = jwtUtils.generateToken(email);
+        String extractedEmail = jwtUtils.getEmailFromToken(token);
+        
+        assertEquals(email, extractedEmail);
+    }
+
+    @Test
+    void testGetUserIdFromToken_NewFormat() {
+        // Test d'extraction de l'ID utilisateur depuis le nouveau format
+        Long userId = 456L;
+        String email = "test@example.com";
+        String role = "COACH";
+        
+        String token = jwtUtils.generateToken(userId, email, role);
+        Long extractedUserId = jwtUtils.getUserIdFromToken(token);
+        
+        assertEquals(userId, extractedUserId);
+    }
+
+    @Test
+    void testGetUserIdFromToken_OldFormat() {
+        // Test d'extraction de l'ID utilisateur depuis l'ancien format (doit retourner null)
+        String email = "test@example.com";
+        
+        String token = jwtUtils.generateToken(email);
+        Long extractedUserId = jwtUtils.getUserIdFromToken(token);
+        
+        assertNull(extractedUserId);
+    }
+
+    @Test
+    void testGetRoleFromToken_NewFormat() {
+        // Test d'extraction du rôle depuis le nouveau format
+        Long userId = 789L;
+        String email = "test@example.com";
+        String role = "ATHLETE";
+        
+        String token = jwtUtils.generateToken(userId, email, role);
+        String extractedRole = jwtUtils.getRoleFromToken(token);
+        
+        assertEquals(role, extractedRole);
+    }
+
+    @Test
+    void testGetRoleFromToken_OldFormat() {
+        // Test d'extraction du rôle depuis l'ancien format (doit retourner null)
+        String email = "test@example.com";
+        
+        String token = jwtUtils.generateToken(email);
+        String extractedRole = jwtUtils.getRoleFromToken(token);
+        
+        assertNull(extractedRole);
+    }
+
+    @Test
+    void testTokenValidation() {
+        // Test de validation du token
+        Long userId = 123L;
+        String email = "test@example.com";
+        String role = "COACH";
+        
+        String token = jwtUtils.generateToken(userId, email, role);
+        
+        // Le token devrait être valide
+        assertNotNull(token);
+        assertFalse(token.isEmpty());
+        
+        // Vérifier que les informations extraites sont correctes
+        assertEquals(userId, jwtUtils.getUserIdFromToken(token));
+        assertEquals(email, jwtUtils.getEmailFromToken(token));
+        assertEquals(role, jwtUtils.getRoleFromToken(token));
     }
 } 

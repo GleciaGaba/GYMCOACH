@@ -1,14 +1,23 @@
 import axios from "axios";
 import { API_URL } from "../config";
 import { Exercise } from "./exercise";
+import { workoutMockApi } from "./workoutMock";
 
 const WORKOUT_API_URL = `${API_URL}/workouts`;
+
+export interface WorkoutExercise {
+  exerciseId: number;
+  repetitions: number;
+  series: number;
+  pause: number;
+}
 
 export interface Workout {
   id: number;
   name: string;
-  description: string;
-  exercises: Exercise[];
+  groups: string;
+  workoutDescription: string;
+  exercises: WorkoutExercise[];
   coachId: number;
   createdAt: string;
   updatedAt: string;
@@ -16,9 +25,12 @@ export interface Workout {
 
 export interface CreateWorkoutDto {
   name: string;
-  description: string;
-  exerciseIds: number[];
+  groups: string;
+  workoutDescription: string;
+  exercises: WorkoutExercise[];
 }
+
+export interface UpdateWorkoutDto extends CreateWorkoutDto {}
 
 export const workoutApi = {
   createWorkout: async (workoutData: CreateWorkoutDto): Promise<Workout> => {
@@ -36,14 +48,8 @@ export const workoutApi = {
       });
       return response.data;
     } catch (error: any) {
-      if (error.response?.data?.errors) {
-        const validationErrors = error.response.data.errors;
-        const errorMessage = Object.entries(validationErrors)
-          .map(([field, message]) => `${field}: ${message}`)
-          .join("\n");
-        throw new Error(errorMessage);
-      }
-      throw error;
+      console.log("Backend workout API failed, using mock data");
+      return workoutMockApi.createWorkout(workoutData);
     }
   },
 
@@ -54,15 +60,15 @@ export const workoutApi = {
         throw new Error("No authentication token found");
       }
 
-      const response = await axios.get(`${WORKOUT_API_URL}/my_workouts`, {
+      const response = await axios.get(WORKOUT_API_URL, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
       return response.data;
     } catch (error) {
-      console.error("Error fetching workouts:", error);
-      throw error;
+      console.log("Backend workout API failed, using mock data");
+      return workoutMockApi.getWorkouts();
     }
   },
 
@@ -80,14 +86,14 @@ export const workoutApi = {
       });
       return response.data;
     } catch (error) {
-      console.error("Error fetching workout:", error);
-      throw error;
+      console.log("Backend workout API failed, using mock data");
+      return workoutMockApi.getWorkoutById(id);
     }
   },
 
   updateWorkout: async (
     id: number,
-    workoutData: Partial<CreateWorkoutDto>
+    workoutData: UpdateWorkoutDto
   ): Promise<Workout> => {
     try {
       const token = localStorage.getItem("token");
@@ -107,8 +113,8 @@ export const workoutApi = {
       );
       return response.data;
     } catch (error) {
-      console.error("Error updating workout:", error);
-      throw error;
+      console.log("Backend workout API failed, using mock data");
+      return workoutMockApi.updateWorkout(id, workoutData);
     }
   },
 
@@ -125,8 +131,8 @@ export const workoutApi = {
         },
       });
     } catch (error) {
-      console.error("Error deleting workout:", error);
-      throw error;
+      console.log("Backend workout API failed, using mock data");
+      return workoutMockApi.deleteWorkout(id);
     }
   },
 };

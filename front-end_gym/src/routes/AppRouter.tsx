@@ -15,7 +15,30 @@ import ExerciseDetailsPage from "../pages/exercise/ExerciseDetailsPage";
 import ChatPage from "../pages/chat/ChatPage";
 
 export default function AppRouter() {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
+
+  console.log("DEBUG - AppRouter render - user:", user);
+  console.log("DEBUG - AppRouter render - isLoading:", isLoading);
+  console.log(
+    "DEBUG - AppRouter render - current pathname:",
+    window.location.pathname
+  );
+
+  // Afficher un loader pendant le chargement de l'authentification
+  if (isLoading) {
+    return (
+      <div className="container mt-5">
+        <div className="row justify-content-center">
+          <div className="col-md-6 text-center">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Chargement...</span>
+            </div>
+            <p className="mt-3">Chargement de l'application...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Routes>
@@ -100,7 +123,31 @@ export default function AppRouter() {
         path="/*"
         element={
           user ? (
-            <Navigate to={`/dashboard_${user.role.toLowerCase()}`} />
+            <div className="container mt-5">
+              <div className="row justify-content-center">
+                <div className="col-md-6 text-center">
+                  <h1 className="display-1">404</h1>
+                  <h2>Page non trouvée</h2>
+                  <p className="lead">
+                    La page que vous recherchez n'existe pas.
+                  </p>
+                  <button
+                    className="btn btn-primary"
+                    onClick={() => window.history.back()}
+                  >
+                    Retour
+                  </button>
+                  <button
+                    className="btn btn-outline-primary ms-2"
+                    onClick={() =>
+                      (window.location.href = `/dashboard_${user.role.toLowerCase()}`)
+                    }
+                  >
+                    Aller au dashboard
+                  </button>
+                </div>
+              </div>
+            </div>
           ) : (
             <Navigate to="/" />
           )

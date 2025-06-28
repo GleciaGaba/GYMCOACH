@@ -12,9 +12,13 @@ import "./ChatWindow.css";
 
 interface ChatWindowProps {
   conversation: Conversation | null;
+  onMessageSent?: () => void;
 }
 
-const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
+const ChatWindow: React.FC<ChatWindowProps> = ({
+  conversation,
+  onMessageSent,
+}) => {
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -98,6 +102,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
       await sendMessage(messageContent, conversation.otherUserId);
       // Recharge la liste complète des messages depuis l'API
       await loadMessages();
+      if (onMessageSent) {
+        onMessageSent();
+      }
     } catch (error) {
       console.error("Erreur lors de l'envoi du message:", error);
       // Remettre le message dans l'input en cas d'erreur
@@ -186,26 +193,57 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
           </div>
         ) : (
           <>
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`message ${
-                  message.senderId === user?.id ? "sent" : "received"
-                }`}
-              >
-                <div className="message-content">
-                  <p>{message.content}</p>
-                  <span className="message-time">
-                    {formatTimestamp(message.timestamp)}
-                    {message.senderId === user?.id && (
-                      <span className="message-status">
-                        {message.read ? "✓✓" : "✓"}
-                      </span>
-                    )}
-                  </span>
+            {messages.map((message) => {
+              // Log temporaire pour debug
+              console.log(
+                "DEBUG senderId:",
+                message.senderId,
+                "user.id:",
+                user?.id,
+                "equal:",
+                String(message.senderId) === String(user?.id)
+              );
+              console.log(
+                "DEBUG Token info:",
+                user?.id,
+                "Type:",
+                typeof user?.id
+              );
+
+              // Déterminer si le message est envoyé par l'utilisateur connecté
+              const isFromCurrentUser =
+                String(message.senderId) === String(user?.id);
+
+              // Classe CSS basée sur l'expéditeur (envoyé vs reçu)
+              const messageClass = `message ${
+                isFromCurrentUser ? "sent" : "received"
+              }`;
+
+              // Déterminer le nom de l'expéditeur
+              const senderName = isFromCurrentUser
+                ? `${user?.firstName} ${user?.lastName}`
+                : conversation.otherUserName;
+
+              return (
+                <div key={message.id} className={messageClass}>
+                  <div className="message-content">
+                    {/* Indicateur de l'expéditeur */}
+                    <div className="message-sender">
+                      <small className="sender-name">{senderName}</small>
+                    </div>
+                    <p>{message.content}</p>
+                    <span className="message-time">
+                      {formatTimestamp(message.timestamp)}
+                      {isFromCurrentUser && (
+                        <span className="message-status">
+                          {message.read ? "✓✓" : "✓"}
+                        </span>
+                      )}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             <div ref={messagesEndRef} />
           </>
         )}

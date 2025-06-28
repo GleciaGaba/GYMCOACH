@@ -53,6 +53,32 @@ export const sendMessage = async (
   }
   mockMessages[receiverId].push(newMessage);
 
+  // Mettre à jour ou créer la conversation
+  const existingConversationIndex = mockConversations.findIndex(
+    (conv) => conv.otherUserId === receiverId
+  );
+
+  if (existingConversationIndex >= 0) {
+    // Mettre à jour la conversation existante
+    mockConversations[existingConversationIndex] = {
+      ...mockConversations[existingConversationIndex],
+      lastMessage: content,
+      lastMessageTimestamp: newMessage.timestamp,
+      unreadCount: 0, // Le message envoyé par l'utilisateur actuel n'est pas non lu
+    };
+  } else {
+    // Créer une nouvelle conversation
+    const newConversation: Conversation = {
+      id: Date.now(),
+      otherUserId: receiverId,
+      otherUserName: `Utilisateur ${receiverId}`, // En mode réel, on récupérerait le nom depuis l'API
+      lastMessage: content,
+      lastMessageTimestamp: newMessage.timestamp,
+      unreadCount: 0,
+    };
+    mockConversations.push(newConversation);
+  }
+
   return newMessage;
 };
 

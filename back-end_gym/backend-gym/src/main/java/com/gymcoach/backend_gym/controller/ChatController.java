@@ -6,6 +6,7 @@ import com.gymcoach.backend_gym.dto.MessageDTO;
 import com.gymcoach.backend_gym.dto.SendMessageRequest;
 import com.gymcoach.backend_gym.model.User;
 import com.gymcoach.backend_gym.repository.UserRepository;
+import com.gymcoach.backend_gym.security.JwtUtils;
 import com.gymcoach.backend_gym.service.ChatService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -27,6 +28,7 @@ public class ChatController {
 
     private final ChatService chatService;
     private final UserRepository userRepository;
+    private final JwtUtils jwtUtils;
 
     /**
      * Envoyer un message
@@ -128,6 +130,21 @@ public class ChatController {
     private String getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getPrincipal() != null) {
+            // Essayer d'abord de récupérer l'ID depuis le token JWT
+            try {
+                // Si l'authentification contient un token JWT, l'extraire
+                if (authentication.getCredentials() instanceof String) {
+                    String token = (String) authentication.getCredentials();
+                    Long userId = jwtUtils.getUserIdFromToken(token);
+                    if (userId != null) {
+                        return String.valueOf(userId);
+                    }
+                }
+            } catch (Exception e) {
+                // En cas d'erreur, continuer avec la méthode existante
+            }
+            
+            // Méthode de fallback : récupérer l'email et chercher l'utilisateur
             String email = authentication.getName(); // L'email est stocké comme principal
             User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));

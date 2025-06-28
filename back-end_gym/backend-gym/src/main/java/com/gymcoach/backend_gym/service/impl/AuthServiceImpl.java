@@ -200,9 +200,20 @@ public void resendConfirmationEmail(String email) {
             );
         }
 
-        String token = jwtUtils.generateToken(user.getEmail());
+        // Générer le token avec le nouveau format (ID dans 'sub', email et role dans des claims)
+        String token = jwtUtils.generateToken(user.getId().longValue(), user.getEmail(), user.getRole());
+        
         // Si passwordChanged est null, on le considère comme false
         String message = Boolean.FALSE.equals(user.getPasswordChanged()) ? "Vous devez changer votre mot de passe" : null;
-        return new AuthResponse(token, user.getEmail(), message, user.getRole(), user.getFirstName(), user.getLastName());
+        
+        AuthResponse response = new AuthResponse();
+        response.setToken(token);
+        response.setEmail(user.getEmail());
+        response.setMessage(message);
+        response.setRole(user.getRole());
+        response.setFirstName(user.getFirstName());
+        response.setLastName(user.getLastName());
+        response.setUserId(user.getId().longValue());
+        return response;
     }
 }

@@ -15,7 +15,9 @@ public class MessageDTO {
     
     private String id;
     private String chatId;
-    private String authorId;
+    private String authorId; // Backward compatibility
+    private String senderId; // Frontend expectation - ID of the sender
+    private String receiverId; // Frontend expectation - ID of the receiver
     private String content;
     private boolean isRead;
     private LocalDateTime createdAt;
